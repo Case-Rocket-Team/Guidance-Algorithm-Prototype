@@ -13,7 +13,7 @@ def samplePointsAround(x, y, r, numPts):
         # Convert polar coordinates to cartesian
         ptX = x + dist * np.cos(theta)
         ptY = y + dist * np.sin(theta)
-        pts[i] = np.array(ptX, ptY)
+        pts[i] = np.array((ptX, ptY))
 
     return pts
 

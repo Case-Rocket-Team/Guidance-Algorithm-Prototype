@@ -28,18 +28,48 @@ def samplePointsAround(x, y, r, numPts):
     maxDistTravellable: maximum distance that can be travelled in one iteration
 """
 def RRT(startCoord, goalCoord, maxIterations, maxDistTravellable):
-    startX, startY = startCoord
-    startPoint = (None, startX, startY) # all points follow this structure of (parentPoint, x, y)
+    if maxIterations <= 0:
+        return []
+    
+    startPoint, startX, startY, theta = startCoord
     randomPoints = samplePointsAround(startX, startY, maxDistTravellable, 20)
 
     # TODO: determine which of these points are viable
+    # For now, arbitrarily say only allow points within pi / 6 radians of current heading
+    viablePoints = []
+    # for point in randomPoints:
+    #     x, y = point
+    #     angle = np.arctan2(y - startY, x - startX)
+    #     if abs(angle - theta) < np.pi / 6:
+    #         viablePoints.append((point, angle))
 
-    tree = []
-
+    # Actual test: points are valid only if they are outside of min turn radius R circles on either side of current position
+    MIN_TURN_R = 50
     for point in randomPoints:
         x, y = point
-        newNode = (startPoint, x, y)
-        tree.append(newNode)
+        orthogonalRightAngle = theta + np.pi / 2
+        orthogonalLeftAngle = theta - np.pi / 2
+        rightCircCenter = (startX + MIN_TURN_R * np.cos(orthogonalRightAngle), startY + MIN_TURN_R * np.sin(orthogonalRightAngle))
+        leftCircCenter = (startX + MIN_TURN_R * np.cos(orthogonalLeftAngle), startY + MIN_TURN_R * np.sin(orthogonalLeftAngle))
+
+        diff = (x - rightCircCenter[0], y - rightCircCenter[1])
+        diffX, diffY = diff
+        dist = np.sqrt(diffX ** 2 + diffY ** 2)
+
+        diff2 = (x - leftCircCenter[0], y - leftCircCenter[1])
+        diffX2, diffY2 = diff2
+        dist2 = np.sqrt(diffX2 ** 2 + diffY2 ** 2)
+
+        if dist > MIN_TURN_R and dist2 > MIN_TURN_R:
+            viablePoints.append((point, np.arctan2(y - startY, x - startX)))
+
+    tree = [startCoord]
+
+    for point, heading in viablePoints:
+        x, y = point
+        newNode = (startCoord, x, y, heading)
+        treeFromHere = RRT(newNode, goalCoord, maxIterations - 1, maxDistTravellable)
+        tree = tree + treeFromHere
 
     # TODO: finish
     return tree

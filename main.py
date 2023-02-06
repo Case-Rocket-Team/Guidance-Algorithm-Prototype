@@ -4,12 +4,28 @@ from rrt import RRT
 
 pygame.init()
 
-size = width, height = (400, 400)
+size = width, height = (600, 600)
 screen = pygame.display.set_mode(size)
 black = 255, 255, 255
 
 running = True
-test_tree = RRT((None, 200, 200, -np.pi / 4), (200, 200), 15, 30)
+
+start_coords = 200, 200
+start_x, start_y = start_coords
+
+goal_coords = 500, 500
+goal_x, goal_y = goal_coords
+
+test_tree = []
+screen.fill(black)
+
+while len(test_tree) < 50:
+    print('Trying for new RRT')
+    screen.fill(black)
+    test_tree = RRT((None, start_x, start_y, -1 * np.pi / 4), goal_coords, 25, 40, 30, screen)
+print('Valid tree found!')
+
+printMe = True
 
 while running:
     for event in pygame.event.get():
@@ -17,18 +33,9 @@ while running:
             running = False
     
     screen.fill(black)
-    pygame.draw.circle(screen, (0, 0, 0), (200, 200), 5);
 
-    # test
-    heading = -np.pi / 4 
-    orthogonalRight = heading + np.pi / 2
-    orthogonalLeft = heading - np.pi / 2
-    orthoRightPt = (200 + 30 * np.cos(orthogonalRight), 200 + 30 * np.sin(orthogonalRight))
-    orthoLeftPt = (200 + 30 * np.cos(orthogonalLeft), 200 + 30 * np.sin(orthogonalLeft))
-    pygame.draw.circle(screen, (255, 0, 0), orthoRightPt, 30)
-    pygame.draw.circle(screen, (255, 0, 0), orthoLeftPt, 30)
-    # pygame.draw.line(screen, (0, 0, 255), (200, 200), (200 + 20 * np.cos(heading), 200 + 20 * np.sin(heading)))
-
+    if printMe:
+        print('Drawing paths')
     for node in test_tree:
         pygame.draw.circle(screen, (0, 0, 255), (node[1], node[2]), 2)
         originPoint, pointX, pointY, pointHeading = node
@@ -36,6 +43,36 @@ while running:
             _, originX, originY, _b = originPoint
             pygame.draw.line(screen, pygame.Color(0, 255, 0, a = 30), (originX, originY), (pointX, pointY), width = 1)
 
+    # find node closest to goal, and backtrack through its path, drawing orange lines to display
+    if printMe:
+        print('Finding ideal path (for now, closest to goal)')
+
+    closestNode = None
+    for node in test_tree:
+        _, x, y, _ = node
+        distToGoal = np.sqrt((x - goal_x) ** 2 + (y - goal_y) ** 2)
+        if closestNode is None or distToGoal < closestNode[0]:
+            closestNode = (distToGoal, node)
+
+    # backtrack through closestNode path and draw lines
+    if printMe:
+        print('Drawing ideal path')
+
+    _, currentNode = closestNode
+    parentNode = currentNode[0]
+
+    while parentNode is not None:
+        _, x, y, _ = currentNode
+        _, parentX, parentY, _ = parentNode
+        pygame.draw.line(screen, (255, 165, 0), (x, y), (parentX, parentY), width = 2)
+        currentNode = parentNode
+        parentNode = currentNode[0]
+
+    # Start and goal circles - draw last so they're on top
+    pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
+    pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
+
     pygame.display.flip()
+    printMe = False
 
 pygame.quit()

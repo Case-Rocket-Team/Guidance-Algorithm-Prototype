@@ -22,7 +22,7 @@ screen.fill(black)
 while len(test_tree) < 50:
     print('Trying for new RRT')
     screen.fill(black)
-    test_tree = RRT((None, start_x, start_y, -1 * np.pi / 4), goal_coords, 25, 40, 30, screen)
+    test_tree = RRT((None, start_x, start_y, - 3 * np.pi / 4), goal_coords, 50, 40, 30, screen)
 print('Valid tree found!')
 
 printMe = True

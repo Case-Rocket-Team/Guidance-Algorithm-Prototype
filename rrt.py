@@ -61,8 +61,13 @@ def isPointValid(point, rocketPoint, heading, minR, maxDistTravellable):
     maxDistTravellable: maximum distance that can be travelled in one iteration
 """
 
+solved = False
+
 def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pygameScreen = None):
-    global MAX_POINTS
+    global solved
+
+    if solved:
+        return []
 
     if maxIterations <= 0 or maxPoints <= 0:
         return []
@@ -73,32 +78,38 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
     viablePoints = []
 
     # Sample points around the current position, line from current position to goal position, and goal position
-    pointsAround = samplePointsAround(startX, startY, maxDistTravellable, 10)
-    pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], 13)
-    pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], maxDistTravellable, 7)
+    pointsAround = samplePointsAround(startX, startY, maxDistTravellable, 15)
+    pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], 15)
+    pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], maxDistTravellable, 10)
 
     for point in [*pointsAround, *pointsInLine, *pointsAroundGoal]:
         if isPointValid(point, (startX, startY), theta, MIN_TURN_R, maxDistTravellable):
             heading = np.arctan2(point[1] - startY, point[0] - startX)
             viablePoints.append((point, heading))
 
+            # Draw a red circle at this point
+            if pygameScreen is not None:
+                pygame.draw.circle(pygameScreen, pygame.Color(255, 0, 0, a = 30), (int(point[0]), int(point[1])), 2)
+                pygame.display.update()
+
     tree = [startCoord]
 
     for point, heading in viablePoints:
         x, y = point
 
-        # if the point is at the goal, break out of the loop
-        if np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < 20:
-            break
-
-        newNode = (startCoord, x, y, heading)
-
-        treeFromHere = RRT(newNode, goalCoord, maxIterations - 1, maxPoints - 1, maxDistTravellable)
-        tree = tree + treeFromHere
-
         if pygameScreen is not None:
             pygame.draw.line(pygameScreen, pygame.Color(0, 255, 0, a = 30), (startX, startY), (x, y))
             pygame.display.update()
+
+        # if the point is at the goal, break out of the loop
+        if np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < 30:
+            solved = True
+            return tree
+
+        newNode = (startCoord, x, y, heading)
+
+        treeFromHere = RRT(newNode, goalCoord, maxIterations - 1, maxPoints - 1, maxDistTravellable, pygameScreen)
+        tree = tree + treeFromHere
 
     # TODO: finish
     return tree

@@ -74,7 +74,7 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
     
     startPoint, startX, startY, theta = startCoord
 
-    MIN_TURN_R = 25
+    MIN_TURN_R = 30
     viablePoints = []
 
     # Sample points around the current position, line from current position to goal position, and goal position

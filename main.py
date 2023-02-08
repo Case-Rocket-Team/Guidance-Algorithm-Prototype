@@ -10,23 +10,37 @@ black = 255, 255, 255
 
 running = True
 
-start_coords = 200, 200
+start_coords = 300, 400
 start_x, start_y = start_coords
 
-goal_coords = 500, 500
+goal_coords = 300, 200
 goal_x, goal_y = goal_coords
+
+# Draw black circle at start and yellow circle at goal
+pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
+pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
 
 test_tree = []
 screen.fill(black)
 
-while len(test_tree) < 50:
-    print('Trying for new RRT')
-    screen.fill(black)
-    test_tree = RRT((None, start_x, start_y, - 3 * np.pi / 4), goal_coords, 50, 40, 30, screen)
-print('Valid tree found!')
+# test to see if this path reached the goal
+def reachedGoal(tree):
+    for node in tree:
+        _, x, y, _ = node
+        distToGoal = np.sqrt((x - goal_x) ** 2 + (y - goal_y) ** 2)
+        if distToGoal <= 50:
+            return True
+
+    return False
 
 printMe = True
 
+# Generate tree
+while not reachedGoal(test_tree):
+    print('Trying for new RRT')
+    screen.fill(black)
+    test_tree = RRT((None, start_x, start_y, 1 * np.pi / 2), goal_coords, 50, 40, 30, screen)
+    
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

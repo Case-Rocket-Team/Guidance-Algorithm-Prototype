@@ -30,6 +30,12 @@ pygame.display.update()
 # draw arcs between p1 and p2, using r1 as radius and c1 as the circle's center, p1 as the start point and p2 as the end point
 sr1 = np.arctan2(p1[1] - c1[1], p1[0] - c1[0])
 er1 = np.arctan2(p2[1] - c1[1], p2[0] - c1[0])
+
+if r1 < 0:
+    print('do stuff')
+    r1 = -r1
+    # sr1, er1 = er1, sr1
+
 pygame.draw.arc(screen, (0, 0, 255), (int(c1[0] - r1), int(c1[1] - r1), int(r1 * 2), int(r1 * 2)), sr1, er1, 1)
 pygame.display.update()
 

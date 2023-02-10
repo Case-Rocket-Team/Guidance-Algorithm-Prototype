@@ -48,41 +48,30 @@ def circle_from(p1,p2,tang):
     pvec_3 = np.array([pvec[0],pvec[1],0]) / pnorm # prepare the difference vector for crossing
     tang_3 = np.array([tang[0],tang[1],0]) # prepare the tangent vector for crossing
     sin_phi = np.cross(pvec_3,tang_3)[2] # taking the cross product, cross is the sin of the angle between tan,pvec
-    if sin_phi == 0:
-        print('DEBUG POINTS HERE')
-        print('p1, ', p1)
-        print('p2, ', p2)
-        print('tang, ', tang)
     radius = pnorm / (2*sin_phi)
     center = p1-np.array([-tang[1],tang[0]])*radius # moving from p_1 perpendicular to the tangentuntil we get to the cent
     
     arclen = radius*np.arcsin(sin_phi)
-    pc = p2 - center
+    pc = (center - p2) * np.sign(radius)
     head_new = np.array([-pc[1],pc[0]])
     return radius, arclen, head_new, center
 
-GOAL_L = 200
+GOAL_L = 750
 
-def isPointValid(point, rocketPoint, heading, minR, maxDistTravellable):
+def isPointValid(point, rocketPoint, heading, minR, goalX, goalY, maxDistTravellable):
     x, y = point
     rocketX, rocketY, currentLength = rocketPoint
 
-    # distToPoint = np.sqrt((x - rocketX) ** 2 + (y - rocketY) ** 2)
-
-    # orthogonalRightAngle = heading + np.pi / 2
-    # orthogonalLeftAngle = heading - np.pi / 2
-    # rightCircCenter = (rocketX + minR * np.cos(orthogonalRightAngle), rocketY + minR * np.sin(orthogonalRightAngle))
-    # leftCircCenter = (rocketX + minR * np.cos(orthogonalLeftAngle), rocketY + minR * np.sin(orthogonalLeftAngle))
-
-    # distToRightCircle = np.sqrt((x - rightCircCenter[0]) ** 2 + (y - rightCircCenter[1]) ** 2)
-    # distToLeftCircle = np.sqrt((x - leftCircCenter[0]) ** 2 + (y - leftCircCenter[1]) ** 2)
-
-    # new_heading = np.arctan2(y - rocketY, x - rocketX)
     r, length, newHeading, arcCenter = circle_from(np.array([rocketX, rocketY]), np.array([x, y]), np.array([heading[0], heading[1]]))
 
-    newLength = currentLength + length
+    newLength = currentLength + length + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
-    return (not (x > 700 or x < 0 or y < 0 or y > 700) and r > minR and newLength <= GOAL_L), newHeading, newLength
+    """
+    CONDITIONS:
+    - current length <= 650 +/- 100
+    """
+
+    return (not (x > 700 or x < 0 or y < 0 or y > 700) and r > minR and (newLength > GOAL_L)), newHeading, newLength
          
 
 """
@@ -109,18 +98,18 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
     
     startPoint, startX, startY, theta, currentL = startCoord
 
-    MIN_TURN_R = 30
+    MIN_TURN_R = 13
     viablePoints = []
 
     # Sample points around the current position, line from current position to goal position, and goal position
-    pointsAround = samplePointsAround(startX, startY, 50, 5)
-    pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], 5)
-    pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], 50, 5)
+    pointsAround = samplePointsAround(startX, startY, 50, 15)
+    pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], 15)
+    pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], 50, 15)
 
-    for point in [*pointsAround, *pointsInLine, *pointsAroundGoal]:
-        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), theta, MIN_TURN_R, maxDistTravellable) 
+    for point in [*pointsAroundGoal, *pointsInLine, *pointsAround]:
+        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), MIN_TURN_R, goalCoord[0], goalCoord[1], maxDistTravellable) 
         if isValid:
-            viablePoints.append((point, newHeading, newLength))
+            viablePoints.append((point, newHeading, newLength)) # invert Y of heading??
 
             # Draw a red circle at this point
             if pygameScreen is not None:
@@ -137,10 +126,15 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
             startRadians = np.arctan2(startY - center[1], startX - center[0])
             endRadians = np.arctan2(y - center[1], x - center[0])
 
-            while startRadians > endRadians:
-                startRadians -= 2 * np.pi
-            pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
-            pygame.draw.line(pygameScreen, pygame.Color(255, 0, 0, a = 30), (x, y), (x + newHeading[0], y + newHeading[1]))
+            if radius < 0:
+                radius *= -1
+                startRadians, endRadians = -endRadians, -startRadians
+            else:
+                startRadians, endRadians = -startRadians, -endRadians
+
+            # pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
+            # pygame.draw.line(pygameScreen, pygame.Color(255, 0, 0, a = 30), (x, y), (x + newHeading[0], y + newHeading[1]))
+            pygame.draw.line(pygameScreen, pygame.Color(0, 255, 0, a = 30), (startX, startY), (x, y))
             pygame.display.update()
 
         # if the point is at the goal, break out of the loop

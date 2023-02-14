@@ -78,10 +78,6 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     This algorithm will begin at the start coordinate, and sample random points around the current position and goal position.
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
-    startCoord: starting location, tuple of (x, y)
-    goalCoord: goal location, tuple of (x, y)
-    maxIterations: maximum number of iterations to run the algorithm
-    maxDistTravellable: maximum distance that can be travelled in one iteration
 """
 
 solved = False

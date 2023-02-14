@@ -153,7 +153,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
 
         # Recursively explore from this point
         newNode = (startCoord, x, y, heading, length)
-        treeFromHere = RRT(newNode, goalCoord, maxIterations - 1, maxPoints - 1, maxDistTravellable, pygameScreen)
+        treeFromHere = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
 
         # Combine the current tree with the tree just explored
         tree = tree + treeFromHere

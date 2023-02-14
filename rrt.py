@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import time
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -30,17 +31,6 @@ def samplePointsInLine(x1, y1, x2, y2, numPts):
         pts[i] = np.array((x, y))
     
     return pts
-"""
-    POINT STRUCT
-    (parent, x, y, heading, length, arcData)
-    parent = POINT STRUCT
-    x = x coordinate
-    y = y coordinate
-    heading = np.array([x, y]) - x & y coordinate of heading vector
-    length = total length of the path up to this point
-    arcData = (radius, arcLength, heading) - data for arc from parent to here
-"""
-
 def circle_from(p1,p2,tang):
     tang = tang / np.linalg.norm(tang) # normalize tangent vector
     pvec = (p2-p1) # find the difference between our two points
@@ -56,7 +46,7 @@ def circle_from(p1,p2,tang):
     head_new = np.array([-pc[1],pc[0]])
     return radius, arclen, head_new, center
 
-GOAL_L = 750
+GOAL_L = 500
 
 def isPointValid(point, rocketPoint, heading, minR, goalX, goalY, maxDistTravellable):
     x, y = point
@@ -64,14 +54,15 @@ def isPointValid(point, rocketPoint, heading, minR, goalX, goalY, maxDistTravell
 
     r, length, newHeading, arcCenter = circle_from(np.array([rocketX, rocketY]), np.array([x, y]), np.array([heading[0], heading[1]]))
 
-    newLength = currentLength + length + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
+    newLength = currentLength + length
+    goalLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
     """
     CONDITIONS:
     - current length <= 650 +/- 100
     """
-
-    return (not (x > 700 or x < 0 or y < 0 or y > 700) and r > minR and (newLength > GOAL_L)), newHeading, newLength
+    # print(newLength)
+    return (not (x > 700 or x < 0 or y < 0 or y > 700) and r > minR and goalLength >= GOAL_L), newHeading, newLength
          
 
 """
@@ -91,6 +82,7 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
     global solved
 
     if solved:
+        print('Already solved, returning...')
         return []
 
     if maxIterations <= 0 or maxPoints <= 0:
@@ -98,15 +90,16 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
     
     startPoint, startX, startY, theta, currentL = startCoord
 
-    MIN_TURN_R = 13
+    MIN_TURN_R = 30
     viablePoints = []
 
     # Sample points around the current position, line from current position to goal position, and goal position
     pointsAround = samplePointsAround(startX, startY, 50, 15)
     pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], 15)
     pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], 50, 15)
+    randomPoints = [*pointsAroundGoal, *pointsInLine, *pointsAround] 
 
-    for point in [*pointsAroundGoal, *pointsInLine, *pointsAround]:
+    for point in randomPoints:
         isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), MIN_TURN_R, goalCoord[0], goalCoord[1], maxDistTravellable) 
         if isValid:
             viablePoints.append((point, newHeading, newLength)) # invert Y of heading??
@@ -132,14 +125,16 @@ def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pyg
             else:
                 startRadians, endRadians = -startRadians, -endRadians
 
-            # pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
+            pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
             # pygame.draw.line(pygameScreen, pygame.Color(255, 0, 0, a = 30), (x, y), (x + newHeading[0], y + newHeading[1]))
-            pygame.draw.line(pygameScreen, pygame.Color(0, 255, 0, a = 30), (startX, startY), (x, y))
+            # pygame.draw.line(pygameScreen, pygame.Color(0, 255, 0, a = 30), (startX, startY), (x, y))
             pygame.display.update()
+            # time.sleep(0.2)
 
         # if the point is at the goal, break out of the loop
         if np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < 30:
             solved = True
+            print('solved')
             return tree
 
         newNode = (startCoord, x, y, heading, length)

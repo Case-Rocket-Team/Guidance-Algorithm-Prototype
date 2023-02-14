@@ -28,7 +28,7 @@ def reachedGoal(tree):
     for node in tree:
         _, x, y, __, ___ = node
         distToGoal = np.sqrt((x - goal_x) ** 2 + (y - goal_y) ** 2)
-        if distToGoal <= 50:
+        if distToGoal <= 30:
             return True
 
     return False
@@ -37,11 +37,11 @@ printMe = True
 
 # Generate tree
 # while not reachedGoal(test_tree):
-# while len(test_tree) < 20:
-print('Trying for new RRT')
-screen.fill(black)
-# test_tree = RRT((None, start_x, start_y, np.array([1, 0]), 0), goal_coords, 50, 40, 30, screen)
-test_tree = RRT((None, start_x, start_y, np.array([0, -1]), 0), goal_coords, 50, 40, 30, screen)
+while len(test_tree) < 20:
+    print('Trying for new RRT')
+    screen.fill(black)
+    # test_tree = RRT((None, start_x, start_y, np.array([1, 0]), 0), goal_coords, 50, 40, 30, screen)
+    test_tree = RRT((None, start_x, start_y, np.array([0, -1]), 0), goal_coords, 10, 40, 30, screen)
     
 while running:
     for event in pygame.event.get():
@@ -78,6 +78,12 @@ while running:
         print('Drawing ideal path')
 
     _, currentNode = closestNode
+    
+    if printMe:
+        _, x, y, _b, length = currentNode
+        print('Length of final path: ', length)
+        print('X and Y of closest node: ', x, y)
+    
     parentNode = currentNode[0]
 
     while parentNode is not None:

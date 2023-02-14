@@ -82,7 +82,7 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
 
 solved = False
 
-def RRT(startCoord, goalCoord, maxIterations, maxPoints, maxDistTravellable, pygameScreen = None):
+def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     global solved
 
     # If one of the paths has reached the goal, don't bother further exploring

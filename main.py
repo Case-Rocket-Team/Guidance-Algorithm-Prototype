@@ -57,8 +57,12 @@ while running:
         
     # Backtrack through closestNode's history and draw arcs between each node
     currentNode = final_node
-    parentNode, _, _, _, tot_length = currentNode
+    parentNode, x, y, _, tot_length = currentNode
+
+    # Print out some nice stats about the path we chose
     if printMe:
+        print('Length of final path: ', tot_length)
+        print('X and Y of closest node: ', x, y)
         print('Drawing ideal path')
 
     while parentNode is not None:
@@ -82,11 +86,6 @@ while running:
     # Start and goal circles - draw last so they're on top
     pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
     pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
-
-    # Print out some nice stats about the path we chose
-    if printMe:
-        print('Length of final path: ', tot_length)
-        print('X and Y of closest node: ', x, y)
 
     pygame.display.flip()
     printMe = False

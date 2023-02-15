@@ -26,6 +26,7 @@ def samplePointsInLine(x1, y1, x2, y2, numPts):
 
     for i in range(numPts):
         r = np.random.uniform(0, length)
+        # change to slope form, walk across slope.
         theta = np.arctan2(y2 - y1, x2 - x1)
         x = x1 + r * np.cos(theta)
         y = y1 + r * np.sin(theta)
@@ -64,13 +65,21 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     # New length is the current length + length of the new arc
     newLength = currentLength + length
     # goalLength is an estimate of the total length of this hypothetical path - combines newLength with current (straight line) dist to goal
-    goalLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
+    totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
     # TODO: fix the length condition. The goal of this is to ensure that all lengths are of the correct minimum length, so that we don't crash in the ground 
     # or get to the goal too early. Currently, it's just broken, and depening on what GOAL_L is the paths may not be created at all.
 
     #             screen bounds conndition,                 turn radius condition,               goal length condition,     also return the new heading + length
-    return (not (x > 700 or x < 0 or y < 0 or y > 700) and r > constants.MIN_TURN_RADIUS and goalLength >= constants.GOAL_L), newHeading, newLength
+    in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
+    big_enough = r > constants.MIN_TURN_RADIUS
+    small_enough = r < constants.MAX_CURVE
+    travellable = totalEstLength < constants.GOAL_L
+
+    
+    valid = in_field and big_enough and small_enough and travellable
+
+    return valid, newHeading, newLength
          
 
 """
@@ -80,21 +89,15 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
 
-solved = False
-
 def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
-    global solved
-
+    solved = False
     # If one of the paths has reached the goal, don't bother further exploring
     # TODO: this is a bad condition, we should keep making multiple feasible paths so that we can score them at the end
-    if solved:
-        print('Already solved, returning...')
-        return []
 
     # Max iterations is a constraint which keeps the simulation from running forever
     # Every time a new point is explored, we decrement the maxIterations counter, and once it reaches 0 we stop exploring
     if maxIterations <= 0:
-        return []
+        return solved, startCoord
     
     # theta = current heading
     # startPoint = tuple of previous point (if it exists, None if not)
@@ -103,9 +106,9 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     # First step of RRT: generate lots of random sample points
 
     # Sample points around the current position, line from current position to goal position, and goal position
-    pointsAround = samplePointsAround(startX, startY, 50, 15)
-    pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], 15)
-    pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], 50, 15)
+    pointsAround = samplePointsAround(startX, startY, constants.MAX_SEARCH_RAD, constants.NUM_POINTS)
+    pointsInLine = samplePointsInLine(startX, startY, goalCoord[0], goalCoord[1], constants.NUM_POINTS)
+    pointsAroundGoal = samplePointsAround(goalCoord[0], goalCoord[1], constants.MAX_SEARCH_RAD, constants.NUM_POINTS)
     # Combind into a single array
     randomPoints = [*pointsAroundGoal, *pointsInLine, *pointsAround] 
 
@@ -124,8 +127,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
                 pygame.display.update()
 
     # Second step of RRT: go through valid points and make connections to each of them, then recursively explore using that point as the new start
-    tree = [startCoord]
-
+    np.random.shuffle(viablePoints)
     for point, heading, length in viablePoints:
         x, y = point
 
@@ -141,21 +143,26 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
             else:
                 startRadians, endRadians = -startRadians, -endRadians
 
-            pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
+            #pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
             pygame.display.update()
 
-        # If we've reached the goal, set the global sovled to True, which will stop other branches from exploring
+        # If we've reached the goal, set the global solved to True, which will stop other branches from exploring
         # TODO: as explained in earlier comment, this is dumb
-        if np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < 30:
+        close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
+        within_landing = length + constants.LANDING_MARGIN > constants.GOAL_L
+
+        newNode = (startCoord, x, y, heading, length)
+
+        if close_enough and within_landing:
+            print('length: ',length)
             solved = True
             print('solved')
-            return tree
+            return solved, newNode
 
         # Recursively explore from this point
-        newNode = (startCoord, x, y, heading, length)
-        treeFromHere = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
-
+        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
+        if solved:
+            return solved, lastNode
         # Combine the current tree with the tree just explored
-        tree = tree + treeFromHere
 
-    return tree
+    return solved, startCoord

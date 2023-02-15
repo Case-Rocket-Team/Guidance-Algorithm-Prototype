@@ -21,17 +21,7 @@ running = True # pygame draw loop only runs when this is True - set to False to 
 pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
 pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
 
-test_tree = []
 
-# test function to see if this path reached the goal
-def reachedGoal(tree):
-    for node in tree:
-        _, x, y, __, ___ = node
-        distToGoal = np.sqrt((x - goal_x) ** 2 + (y - goal_y) ** 2)
-        if distToGoal <= 30:
-            return True
-
-    return False
 
 printMe = True
 
@@ -41,13 +31,17 @@ printMe = True
 # be a better one. I also have a condition using the reachedGoal function, but this isn't good either, for the reasons 
 # explained in rrt.py
 
-# while not reachedGoal(test_tree):
-while len(test_tree) < 20:
+reachedGoal = False
+test_tree = []
+while not reachedGoal:
+#while len(test_tree) < 20:
     print('Trying for new RRT')
     screen.fill((255, 255, 255))
     #            origin (None), x,   y,          heading,      length, goal,maxIterations
-    test_tree = RRT((None, start_x, start_y, np.array([0, -1]), 0), goal_coords, 10, screen)
-    
+    reachedGoal, final_node = RRT((None, start_x, start_y, np.array([0, -1]), 0), goal_coords, constants.MAX_ITERATIONS, screen)
+
+print(final_node)
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -58,22 +52,12 @@ while running:
     # fitness function, such as looking for the best path length (closest to GOAL_L) ? ***
     
     # Find node closest to goal, and backtrack through its path, drawing orange lines to display
-    if printMe:
-        print('Finding ideal path (for now, closest to goal)')
 
     # Find closest point to the goal
-    closestNode = None
-    for node in test_tree:
-        _, x, y, _b, _c = node
-        distToGoal = np.sqrt((x - goal_x) ** 2 + (y - goal_y) ** 2)
-        if closestNode is None or distToGoal < closestNode[0]:
-            closestNode = (distToGoal, node)
-    
         
     # Backtrack through closestNode's history and draw arcs between each node
-    _, currentNode = closestNode
-    parentNode = currentNode[0]
-
+    currentNode = final_node
+    parentNode, _, _, _, tot_length = currentNode
     if printMe:
         print('Drawing ideal path')
 
@@ -101,8 +85,7 @@ while running:
 
     # Print out some nice stats about the path we chose
     if printMe:
-        _, x, y, _b, length = currentNode
-        print('Length of final path: ', length)
+        print('Length of final path: ', tot_length)
         print('X and Y of closest node: ', x, y)
 
     pygame.display.flip()

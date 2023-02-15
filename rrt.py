@@ -64,13 +64,9 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
 
     # New length is the current length + length of the new arc
     newLength = currentLength + length
-    # goalLength is an estimate of the total length of this hypothetical path - combines newLength with current (straight line) dist to goal
+    # Estimate the total length of this hypothetical path - combines newLength with current (straight line) dist to goal
     totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
-    # TODO: fix the length condition. The goal of this is to ensure that all lengths are of the correct minimum length, so that we don't crash in the ground 
-    # or get to the goal too early. Currently, it's just broken, and depening on what GOAL_L is the paths may not be created at all.
-
-    #             screen bounds conndition,                 turn radius condition,               goal length condition,     also return the new heading + length
     in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
     big_enough = r > constants.MIN_TURN_RADIUS
     small_enough = r < constants.MAX_CURVE
@@ -91,8 +87,6 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
 
 def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     solved = False
-    # If one of the paths has reached the goal, don't bother further exploring
-    # TODO: this is a bad condition, we should keep making multiple feasible paths so that we can score them at the end
 
     # Max iterations is a constraint which keeps the simulation from running forever
     # Every time a new point is explored, we decrement the maxIterations counter, and once it reaches 0 we stop exploring
@@ -146,8 +140,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
             #pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
             pygame.display.update()
 
-        # If we've reached the goal, set the global solved to True, which will stop other branches from exploring
-        # TODO: as explained in earlier comment, this is dumb
+        # Check if we've reached our 'sovled conditions,' and if so, return this node as the last one w/ solved = True
         close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
         within_landing = length + constants.LANDING_MARGIN > constants.GOAL_L
 
@@ -163,6 +156,6 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
         solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
         if solved:
             return solved, lastNode
-        # Combine the current tree with the tree just explored
 
+    # If this point reached, no viable points satisfied the solved conditions
     return solved, startCoord

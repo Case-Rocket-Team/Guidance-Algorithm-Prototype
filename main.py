@@ -21,20 +21,11 @@ running = True # pygame draw loop only runs when this is True - set to False to 
 pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
 pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
 
-
-
 printMe = True
 
 # Generate tree
-# TODO: this while loop is bad -- I have the arbitrary length condition on the tree so that the function doesn't run
-# into a wall and quit with 2 nodes added. Still, it's a dumb condition to generate new trees based on. There should 
-# be a better one. I also have a condition using the reachedGoal function, but this isn't good either, for the reasons 
-# explained in rrt.py
-
 reachedGoal = False
-test_tree = []
 while not reachedGoal:
-#while len(test_tree) < 20:
     print('Trying for new RRT')
     screen.fill((255, 255, 255))
     #            origin (None), x,   y,          heading,      length, goal,maxIterations
@@ -47,15 +38,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Now that we've generated the tree, we should go through and find / draw the ideal path
-    # TODO: right now, the 'ideal path' is only based on ending distance to goal. This should be changed to some other
-    # fitness function, such as looking for the best path length (closest to GOAL_L) ? ***
-    
-    # Find node closest to goal, and backtrack through its path, drawing orange lines to display
-
-    # Find closest point to the goal
-        
-    # Backtrack through closestNode's history and draw arcs between each node
+    # Backtrack through final_node's history and draw arcs between each node
     currentNode = final_node
     parentNode, x, y, _, tot_length = currentNode
 

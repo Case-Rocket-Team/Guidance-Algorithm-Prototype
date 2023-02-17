@@ -84,14 +84,16 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
-
-def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
+def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
     # Every time a new point is explored, we decrement the maxIterations counter, and once it reaches 0 we stop exploring
     if maxIterations <= 0:
-        return solved, startCoord
+        return solved, startCoord, tree_length
+
+    if tree_length > constants.MAX_TREE_SIZE:
+        return solved, startCoord, tree_length
     
     # theta = current heading
     # startPoint = tuple of previous point (if it exists, None if not)
@@ -123,6 +125,8 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     # Second step of RRT: go through valid points and make connections to each of them, then recursively explore using that point as the new start
     np.random.shuffle(viablePoints)
     for point, heading, length in viablePoints:
+        tree_length += 1
+
         x, y = point
 
         # This if block is just for correctly displaying the path we are exploring
@@ -147,15 +151,15 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
         newNode = (startCoord, x, y, heading, length)
 
         if close_enough and within_landing:
-            print('length: ',length)
+            # print('length: ',length)
             solved = True
-            print('solved')
-            return solved, newNode
+            # print('solved')
+            return solved, newNode, tree_length
 
         # Recursively explore from this point
-        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
+        solved, lastNode, tree_length = RRT(newNode, goalCoord, maxIterations - 1, tree_length, pygameScreen)
         if solved:
-            return solved, lastNode
+            return solved, lastNode, tree_length
 
     # If this point reached, no viable points satisfied the solved conditions
-    return solved, startCoord
+    return solved, startCoord, tree_length

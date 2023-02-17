@@ -4,11 +4,13 @@ import constants
 from rrt import RRT, circle_from
 
 # Initialize pygame + some constants
-pygame.init()
-
 size = width, height = constants.SCREEN_DIM
-screen = pygame.display.set_mode(size)
-screen.fill((255, 255, 255))
+
+screen = None
+if constants.DRAW_STUFF:
+    pygame.init()
+    screen = pygame.display.set_mode(size)
+    screen.fill((255, 255, 255))
 
 start_coords = start_x, start_y = constants.ORIGIN_COORDS 
 initHeading = np.array([0, -1]) # in this case, rocket starts facing up
@@ -18,8 +20,9 @@ goal_coords = goal_x, goal_y = constants.GOAL_COORDS
 running = True # pygame draw loop only runs when this is True - set to False to quit
 
 # Draw black circle at start and yellow circle at goal
-pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
-pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
+if constants.DRAW_STUFF:
+    pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
+    pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
 
 printMe = True
 
@@ -27,13 +30,25 @@ printMe = True
 reachedGoal = False
 while not reachedGoal:
     print('Trying for new RRT')
-    screen.fill((255, 255, 255))
-    #            origin (None), x,   y,          heading,      length, goal,maxIterations
-    reachedGoal, final_node = RRT((None, start_x, start_y, np.array([0, -1]), 0), goal_coords, constants.MAX_ITERATIONS, screen)
+
+    pygameScreen = None
+    if constants.DRAW_STUFF:
+        screen.fill((255, 255, 255))
+        pygameScreen = screen
+
+    reachedGoal, final_node = RRT(
+        (None, start_x, start_y, np.array([0, -1]), 0), 
+        goal_coords, 
+        constants.MAX_ITERATIONS, 
+        [],
+        pygameScreen
+        )
 
 print(final_node)
+if constants.DRAW_STUFF:
+    screen.fill((255, 255, 255))
 
-while running:
+while constants.DRAW_STUFF and running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False

@@ -2,11 +2,14 @@ import numpy as np
 import simulation_consts
 import constants
 from rrt import RRT
-from progressbar import printProgressBar
-import csv
+# from progressbar import printProgressBar
+# import csv
 
-row_list = [['id', 'indepID', 'LANDING_MARGIN', 'ORIGIN_COORDS_X', 'ORIGIN_COORDS_Y', 'GOAL_COORDS_X', 'GOAL_COORDS_Y', 'SCREEN_DIM_X', 'SCREEN_DIM_Y', 'MAX_CURVE', 'NUM_POINTS', 'MAX_ITERATIONS', 'MAX_SEARCH_RAD', 'avg_length', 'avg_points', 'num_reached_goal']]
-
+"""
+Class for simulating pairs of input, output constants and grading the performance of each
+Usage: can use methods independently as needed or use the run_simulations() method to get a list of results,
+with stats about all of the simulations and the cost of each simulation (see line 109 as example)
+"""
 class Simulation:
     """
     Simulates num_trials iterations of RRT algorithms with the given input_consts and output_consts
@@ -107,6 +110,7 @@ results = Simulation.run_simulations(10, 10, 20)
 print(results)
 
 # DEPRECATED BUT COMMENTED OUT BECAUSE IM LAZY
+# row_list = [['id', 'indepID', 'LANDING_MARGIN', 'ORIGIN_COORDS_X', 'ORIGIN_COORDS_Y', 'GOAL_COORDS_X', 'GOAL_COORDS_Y', 'SCREEN_DIM_X', 'SCREEN_DIM_Y', 'MAX_CURVE', 'NUM_POINTS', 'MAX_ITERATIONS', 'MAX_SEARCH_RAD', 'avg_length', 'avg_points', 'num_reached_goal']]
 # for i in range(0):
 #     print('Starting Simulation ', i)
 

@@ -1,4 +1,5 @@
 import numpy as np
+import simulation_consts
 import constants
 from rrt import RRT
 from progressbar import printProgressBar
@@ -6,55 +7,39 @@ import csv
 
 row_list = [['id', 'indepID', 'LANDING_MARGIN', 'ORIGIN_COORDS_X', 'ORIGIN_COORDS_Y', 'GOAL_COORDS_X', 'GOAL_COORDS_Y', 'SCREEN_DIM_X', 'SCREEN_DIM_Y', 'MAX_CURVE', 'NUM_POINTS', 'MAX_ITERATIONS', 'MAX_SEARCH_RAD', 'avg_length', 'avg_points', 'num_reached_goal']]
 
-simulation_id = 0
-for i in range(100):
-    print('Starting Simulation ', i)
-    # Save old const values of LANDING_MARGIN, ORIGIN_COORDS, GOAL_COORDS, SCREEN_DIM
-    old_vals_independent = constants.LANDING_MARGIN, constants.ORIGIN_COORDS, constants.GOAL_COORDS, constants.SCREEN_DIM
-
-    # Generate 4 random independent vars
-    LANDING_MARGIN = int(np.random.uniform(1, 30))
-    SCREEN_DIM = int(np.random.uniform(1, 600)), int(np.random.uniform(1, 600))
-    ORIGIN_COORDS = int(np.random.uniform(1, SCREEN_DIM[0])), int(np.random.uniform(1, SCREEN_DIM[1]))  
-    GOAL_COORDS = int(np.random.uniform(1, SCREEN_DIM[0])), int(np.random.uniform(1, SCREEN_DIM[1]))
-
-    # Set new const vals
-    constants.LANDING_MARGIN = LANDING_MARGIN
-    constants.ORIGIN_COORDS = ORIGIN_COORDS
-    constants.GOAL_COORDS = GOAL_COORDS
-    constants.SCREEN_DIM = SCREEN_DIM
-
-    for j in range(100):
-        print(f'Starting Simulation {i}x{j}',  j)
-
-        # save old const vals
-        old_vals = constants.MAX_CURVE, constants.NUM_POINTS, constants.MAX_ITERATIONS, constants.MAX_SEARCH_RAD
-
-        # Generate random 4 outputs
-        MAX_CURVE = int(np.random.uniform(20, 200))
-        NUM_POINTS = int(np.random.uniform(1, 20))
-        MAX_ITERATIONS = int(np.random.uniform(1, 50))
-        SEARCH_RADIUS = int(np.random.uniform(25, 300))
-
-        # Set new const vals
-        constants.MAX_CURVE = MAX_CURVE
-        constants.NUM_POINTS = NUM_POINTS
-        constants.MAX_ITERATIONS = MAX_ITERATIONS
-        constants.MAX_SEARCH_RAD = SEARCH_RADIUS
+class Simulation:
+    """
+    Simulates num_trials iterations of RRT algorithms with the given input_consts and output_consts
+    input_consts = (LANDING_MARGIN, ORIGIN_COORDS, GOAL_COORDS, SCREEN_DIM)
+    output_consts = (MAX_CURVE, NUM_POINTS, MAX_ITERATIONS, MAX_SEARCH_RAD)
+    returns tuple of (avg_length, avg_points, percent_reached_goal) of all num_trials iterations
+    """
+    def simulate_in_out_pair(input_consts, output_consts, num_trials):
+        # Set constants in simulation_consts.py
+        simulation_consts.LANDING_MARGIN = input_consts[0]
+        simulation_consts.ORIGIN_COORDS = input_consts[1]
+        simulation_consts.GOAL_COORDS = input_consts[2]
+        simulation_consts.SCREEN_DIM = input_consts[3]
+        simulation_consts.MAX_CURVE = output_consts[0]
+        simulation_consts.NUM_POINTS = output_consts[1]
+        simulation_consts.MAX_ITERATIONS = output_consts[2]
+        simulation_consts.MAX_SEARCH_RAD = output_consts[3]
 
         lengths = []
         num_points = []
         num_reached_goal = 0
 
-        # Run simulation w/ new contsants
-        for k in range(20):
-            print(str(k) + ', ', end = '')
+        for i in range(num_trials):
+            print('Simulation ', i)
+            # printProgressBar(i, num_trials, prefix = 'Simulation Progress:', suffix = 'Complete')
+
             reachedGoal, final_node, tree_length = RRT(
-                (None, constants.ORIGIN_COORDS[0], constants.ORIGIN_COORDS[1], np.array([0, -1]), 0), 
-                constants.GOAL_COORDS, 
-                constants.MAX_ITERATIONS, 
+                (None, simulation_consts.ORIGIN_COORDS[0], simulation_consts.ORIGIN_COORDS[1], np.array([0, -1]), 0), 
+                simulation_consts.GOAL_COORDS, 
+                simulation_consts.MAX_ITERATIONS, 
                 0,
-                None
+                pygameScreen = None,
+                constants = simulation_consts
             )
 
             _, x, y, __, tot_length = final_node
@@ -65,29 +50,129 @@ for i in range(100):
             if reachedGoal:
                 num_reached_goal += 1
 
-            printProgressBar(k, 20, prefix = 'Simulation Progress:', suffix = 'Complete')
-
-        printProgressBar(20, 20, prefix = 'Simulation Progress:', suffix = 'Complete')
+        # printProgressBar(num_trials, num_trials, prefix = 'Simulation Progress:', suffix = 'Complete')
+        print()
 
         avg_length = int(sum(lengths) / len(lengths))
         avg_points = int(sum(num_points) / len(num_points))
+        percent_reached_goal = num_reached_goal / num_trials
+        
+        return (avg_length, avg_points, percent_reached_goal)
 
-        # Add to csv rows
-        row_list.append([simulation_id, i, LANDING_MARGIN, ORIGIN_COORDS[0], ORIGIN_COORDS[1], GOAL_COORDS[0], GOAL_COORDS[1], SCREEN_DIM[0], SCREEN_DIM[1], MAX_CURVE, NUM_POINTS, MAX_ITERATIONS, SEARCH_RADIUS, avg_length, avg_points, num_reached_goal])
+    def gen_random_inputs():
+        LANDING_MARGIN = int(np.random.uniform(1, 30))
+        SCREEN_DIM = int(np.random.uniform(1, 600)), int(np.random.uniform(1, 600))
+        ORIGIN_COORDS = int(np.random.uniform(1, SCREEN_DIM[0])), int(np.random.uniform(1, SCREEN_DIM[1]))  
+        GOAL_COORDS = int(np.random.uniform(1, SCREEN_DIM[0])), int(np.random.uniform(1, SCREEN_DIM[1]))
 
-        constants.MAX_CURVE = old_vals[0]
-        constants.NUM_POINTS = old_vals[1]
-        constants.MAX_ITERATIONS = old_vals[2]
-        constants.MAX_SEARCH_RAD = old_vals[3]
-        simulation_id += 1
+        return (LANDING_MARGIN, ORIGIN_COORDS, GOAL_COORDS, SCREEN_DIM)
 
-    # Now that simulation is done, reset constants
-    constants.LANDING_MARGIN = old_vals_independent[0]
-    constants.ORIGIN_COORDS = old_vals_independent[1]
-    constants.GOAL_COORDS = old_vals_independent[2]
-    constants.SCREEN_DIM = old_vals_independent[3]
+    def gen_random_outputs():
+        MAX_CURVE = int(np.random.uniform(20, 200))
+        NUM_POINTS = int(np.random.uniform(2, 20))
+        MAX_ITERATIONS = int(np.random.uniform(5, 50))
+        MAX_SEARCH_RAD = int(np.random.uniform(10, 200))
 
-# Write to csv
-with open('simulation_results.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerows(row_list)
+        return (MAX_CURVE, NUM_POINTS, MAX_ITERATIONS, MAX_SEARCH_RAD)
+
+    """
+    Grades the (avg_length, avg_points, percent_reached_goal) tuple from a simulation session
+    lower number better person
+    """
+    def cost_func(result):
+        avg_length, avg_points, percent_reached_goal = result
+
+        pts_cost = avg_points ** 2
+        length_cost = (avg_length - constants.GOAL_L) ** 2
+        percent_reached_multiplier = 11 - (10 * percent_reached_goal)
+
+        return percent_reached_multiplier * (pts_cost + length_cost)
+
+    def run_simulations(num_independent_trials, num_dependent_trials, num_simulation_trials):
+        results = []
+
+        for i in range(num_independent_trials):
+            input_consts = Simulation.gen_random_inputs()
+
+            for j in range(num_dependent_trials):
+                output_consts = Simulation.gen_random_outputs()
+
+                result = Simulation.simulate_in_out_pair(input_consts, output_consts, num_simulation_trials)
+                cost = Simulation.cost_func(result)
+                results.append([result, cost])
+        
+        return results
+
+results = Simulation.run_simulations(10, 10, 20)
+print(results)
+
+# DEPRECATED BUT COMMENTED OUT BECAUSE IM LAZY
+# for i in range(0):
+#     print('Starting Simulation ', i)
+
+#     # Generate 4 random independent vars
+#     LANDING_MARGIN = int(np.random.uniform(1, 30))
+#     SCREEN_DIM = int(np.random.uniform(1, 600)), int(np.random.uniform(1, 600))
+#     ORIGIN_COORDS = int(np.random.uniform(1, SCREEN_DIM[0])), int(np.random.uniform(1, SCREEN_DIM[1]))  
+#     GOAL_COORDS = int(np.random.uniform(1, SCREEN_DIM[0])), int(np.random.uniform(1, SCREEN_DIM[1]))
+
+#     # Set new const vals
+#     consts.LANDING_MARGIN = LANDING_MARGIN
+#     consts.ORIGIN_COORDS = ORIGIN_COORDS
+#     consts.GOAL_COORDS = GOAL_COORDS
+#     consts.SCREEN_DIM = SCREEN_DIM
+
+#     for j in range(NUM_DEPENDENT_TRIALS):
+#         print(f'Starting Simulation {i}x{j}',  j)
+
+#         # Generate random 4 outputs
+#         MAX_CURVE = int(np.random.uniform(20, 200))
+#         NUM_POINTS = int(np.random.uniform(1, 20))
+#         MAX_ITERATIONS = int(np.random.uniform(1, 50))
+#         SEARCH_RADIUS = int(np.random.uniform(25, 300))
+
+#         # Set new const vals
+#         consts.MAX_CURVE = MAX_CURVE
+#         consts.NUM_POINTS = NUM_POINTS
+#         consts.MAX_ITERATIONS = MAX_ITERATIONS
+#         consts.MAX_SEARCH_RAD = SEARCH_RADIUS
+
+#         lengths = []
+#         num_points = []
+#         num_reached_goal = 0
+
+#         # Run simulation w/ new contsants
+#         for k in range(NUM_SIMULATION_PER_COMB):
+#             reachedGoal, final_node, tree_length = RRT(
+#                 (None, consts.ORIGIN_COORDS[0], consts.ORIGIN_COORDS[1], np.array([0, -1]), 0), 
+#                 consts.GOAL_COORDS, 
+#                 consts.MAX_ITERATIONS, 
+#                 0,
+#                 pygameScreen = None,
+#                 constants = consts
+#             )
+
+#             _, x, y, __, tot_length = final_node
+
+#             lengths.append(tot_length)
+#             num_points.append(tree_length)
+
+#             if reachedGoal:
+#                 num_reached_goal += 1
+
+#             printProgressBar(k, NUM_SIMULATION_PER_COMB, prefix = 'Simulation Progress:', suffix = 'Complete')
+
+#         printProgressBar(NUM_SIMULATION_PER_COMB, NUM_SIMULATION_PER_COMB, prefix = 'Simulation Progress:', suffix = 'Complete')
+
+#         avg_length = int(sum(lengths) / len(lengths))
+#         avg_points = int(sum(num_points) / len(num_points))
+
+#         # Add to csv rows
+#         row_list.append([simulation_id, i, LANDING_MARGIN, ORIGIN_COORDS[0], ORIGIN_COORDS[1], GOAL_COORDS[0], GOAL_COORDS[1], SCREEN_DIM[0], SCREEN_DIM[1], MAX_CURVE, NUM_POINTS, MAX_ITERATIONS, SEARCH_RADIUS, avg_length, avg_points, num_reached_goal])
+
+#         simulation_id += 1
+
+# # Write to csv
+# with open('simulation_results.csv', 'w', newline='') as file:
+#     writer = csv.writer(file)
+#     writer.writerows(row_list)

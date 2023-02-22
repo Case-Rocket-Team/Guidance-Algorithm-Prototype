@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-import constants
+import constants as consts
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -56,7 +56,7 @@ def circle_from(p1,p2,tang):
 # Determines if a point is valid or not, meaning if a course can be plotted from the rocket's current position to the point using the circle_from function
 # point, heading = (x, y) tuple
 # returns tuple of (isValid, newHeading, newLength)
-def isPointValid(point, rocketPoint, heading, goalX, goalY):
+def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
     x, y = point
     rocketX, rocketY, currentLength = rocketPoint
 
@@ -84,7 +84,7 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
-def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None):
+def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, constants = consts):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
@@ -113,7 +113,7 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None):
     # For each of the random sample points, check if it's valid or not
     # if valid, add to list of valid points
     for point in randomPoints:
-        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1]) 
+        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1], constants) 
         if isValid:
             viablePoints.append((point, newHeading, newLength)) 
 

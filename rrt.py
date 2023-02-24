@@ -75,7 +75,7 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     
     valid = in_field and big_enough and small_enough and travellable
 
-    return valid, newHeading, newLength
+    return valid, newHeading, newLength, r
          
 
 """
@@ -95,7 +95,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     
     # theta = current heading
     # startPoint = tuple of previous point (if it exists, None if not)
-    startPoint, startX, startY, theta, currentL = startCoord
+    startPoint, startX, startY, theta, currentL, prev_turning_radius = startCoord
 
     # First step of RRT: generate lots of random sample points
 
@@ -111,9 +111,9 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     # For each of the random sample points, check if it's valid or not
     # if valid, add to list of valid points
     for point in randomPoints:
-        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1]) 
+        isValid, newHeading, newLength, radius = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1]) 
         if isValid:
-            viablePoints.append((point, newHeading, newLength)) 
+            viablePoints.append((point, newHeading, newLength, radius)) 
 
             # Draw a red circle at this point
             if pygameScreen is not None:
@@ -122,7 +122,8 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
 
     # Second step of RRT: go through valid points and make connections to each of them, then recursively explore using that point as the new start
     np.random.shuffle(viablePoints)
-    for point, heading, length in viablePoints:
+    # print('len viable points ', len(viablePoints))
+    for point, heading, length, r in viablePoints:
         x, y = point
 
         # This if block is just for correctly displaying the path we are exploring
@@ -144,7 +145,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
         close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
         within_landing = length + constants.LANDING_MARGIN > constants.GOAL_L
 
-        newNode = (startCoord, x, y, heading, length)
+        newNode = (startCoord, x, y, heading, length, r)
 
         if close_enough and within_landing:
             print('length: ',length)
@@ -159,3 +160,33 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
 
     # If this point reached, no viable points satisfied the solved conditions
     return solved, startCoord
+
+"""
+startXY = tuple
+startHeading = np.array, x & y components of heading vector
+goalXY = tuple
+pygameScreen = pygame screen object
+"""
+def start_RRT_return_formated_path(startXY, startHeading, goalXY, pygameScreen = None):
+    print('asdl;kfja;lsdjf;')
+    reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS, pygameScreen)
+
+    if not reached:
+        return None
+
+    list_nodes = []
+
+    # convert linked list to array
+    while final_node[0] is not None:
+        list_nodes.insert(0, (final_node[1], final_node[2], final_node[3], final_node[4], final_node[5]))
+        final_node = final_node[0]
+
+    # for every item in array, move the r value of tuple to the previous node in the array (yes I hate myself too)
+    for i in range(len(list_nodes)):
+        if i + 1 >= len(list_nodes):
+            break
+
+        # move next r val to this node
+        new_node_item = (list_nodes[i][0], list_nodes[i][1], list_nodes[i][2], list_nodes[i][3], list_nodes[i + 1][4])
+
+    return list_nodes

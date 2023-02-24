@@ -1,7 +1,7 @@
 import numpy as np
 import pygame
 import constants
-from rrt import RRT, circle_from
+from rrt import RRT, circle_from, start_RRT_return_formated_path
 
 # Initialize pygame + some constants
 pygame.init()
@@ -29,7 +29,7 @@ while not reachedGoal:
     print('Trying for new RRT')
     screen.fill((255, 255, 255))
     #            origin (None), x,   y,          heading,      length, goal,maxIterations
-    reachedGoal, final_node = RRT((None, start_x, start_y, np.array([0, -1]), 0), goal_coords, constants.MAX_ITERATIONS, screen)
+    reachedGoal, final_node = RRT((None, start_x, start_y, np.array([0, -1]), 0, None), goal_coords, constants.MAX_ITERATIONS, screen)
 
 print(final_node)
 
@@ -40,7 +40,7 @@ while running:
 
     # Backtrack through final_node's history and draw arcs between each node
     currentNode = final_node
-    parentNode, x, y, _, tot_length = currentNode
+    parentNode, x, y, _, tot_length, _ = currentNode
 
     # Print out some nice stats about the path we chose
     if printMe:
@@ -49,8 +49,8 @@ while running:
         print('Drawing ideal path')
 
     while parentNode is not None:
-        _, x, y, _b, _c = currentNode
-        _, parentX, parentY, tang, _c = parentNode
+        _, x, y, _b, _c, _d = currentNode
+        _, parentX, parentY, tang, _c, _d = parentNode
         radius, arclen, newHead, center = circle_from(np.array([parentX, parentY]), np.array([x, y]), tang)
 
         startRadians = np.arctan2(parentY - center[1], parentX - center[0])

@@ -67,13 +67,13 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     # Estimate the total length of this hypothetical path - combines newLength with current (straight line) dist to goal
     totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
-    in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
+    # in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
     big_enough = r > constants.MIN_TURN_RADIUS
     small_enough = r < constants.MAX_CURVE
     travellable = totalEstLength < constants.GOAL_L
 
     
-    valid = in_field and big_enough and small_enough and travellable
+    valid = big_enough and small_enough and travellable
 
     return valid, newHeading, newLength, r
          
@@ -168,7 +168,9 @@ goalXY = tuple
 pygameScreen = pygame screen object
 returns: [(x, y, heading, length, r), ...]
 """
-def start_RRT_return_formated_path(startXY, startHeading, goalXY, pygameScreen = None):
+def start_RRT_return_formated_path(startHeading, pygameScreen = None):
+    startXY = constants.ORIGIN_COORDS
+    goalXY = constants.GOAL_COORDS
     reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS, pygameScreen)
 
     if not reached:

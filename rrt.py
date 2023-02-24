@@ -168,10 +168,10 @@ goalXY = tuple
 pygameScreen = pygame screen object
 returns: [(x, y, heading, length, r), ...]
 """
-def start_RRT_return_formated_path(startHeading, pygameScreen = None):
+def start_RRT_return_formated_path(startHeading):
     startXY = constants.ORIGIN_COORDS
     goalXY = constants.GOAL_COORDS
-    reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS, pygameScreen)
+    reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS, pygameScreen = None)
 
     if not reached:
         return None

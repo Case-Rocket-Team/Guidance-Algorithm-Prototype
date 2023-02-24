@@ -166,9 +166,9 @@ startXY = tuple
 startHeading = np.array, x & y components of heading vector
 goalXY = tuple
 pygameScreen = pygame screen object
+returns: [(x, y, heading, length, r), ...]
 """
 def start_RRT_return_formated_path(startXY, startHeading, goalXY, pygameScreen = None):
-    print('asdl;kfja;lsdjf;')
     reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS, pygameScreen)
 
     if not reached:
@@ -182,11 +182,14 @@ def start_RRT_return_formated_path(startXY, startHeading, goalXY, pygameScreen =
         final_node = final_node[0]
 
     # for every item in array, move the r value of tuple to the previous node in the array (yes I hate myself too)
+    result = []
     for i in range(len(list_nodes)):
         if i + 1 >= len(list_nodes):
             break
 
         # move next r val to this node
+        #x, y, theta, currentL, r
         new_node_item = (list_nodes[i][0], list_nodes[i][1], list_nodes[i][2], list_nodes[i][3], list_nodes[i + 1][4])
+        result[i] = new_node_item
 
-    return list_nodes
+    return result

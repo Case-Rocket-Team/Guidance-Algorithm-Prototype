@@ -1,5 +1,4 @@
 import numpy as np
-import pygame
 import constants
 
 # Samples numPts random points around the given x, y in a circle of radius r
@@ -85,7 +84,7 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
 
-def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
+def RRT(startCoord, goalCoord, maxIterations):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
@@ -115,31 +114,11 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
         if isValid:
             viablePoints.append((point, newHeading, newLength, radius)) 
 
-            # Draw a red circle at this point
-            if pygameScreen is not None:
-                pygame.draw.circle(pygameScreen, pygame.Color(255, 0, 0, a = 30), (int(point[0]), int(point[1])), 2)
-                pygame.display.update()
-
     # Second step of RRT: go through valid points and make connections to each of them, then recursively explore using that point as the new start
     np.random.shuffle(viablePoints)
     # print('len viable points ', len(viablePoints))
     for point, heading, length, r in viablePoints:
         x, y = point
-
-        # This if block is just for correctly displaying the path we are exploring
-        if pygameScreen is not None:
-            radius, arclen, newHeading, center = circle_from(np.array([startX, startY]), np.array([x, y]), np.array([theta[0], theta[1]]))
-            startRadians = np.arctan2(startY - center[1], startX - center[0])
-            endRadians = np.arctan2(y - center[1], x - center[0])
-
-            if radius < 0:
-                radius *= -1
-                startRadians, endRadians = -endRadians, -startRadians
-            else:
-                startRadians, endRadians = -startRadians, -endRadians
-
-            #pygame.draw.arc(pygameScreen, pygame.Color(0, 255, 0, a = 30), pygame.Rect(center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 1)
-            pygame.display.update()
 
         # Check if we've reached our 'sovled conditions,' and if so, return this node as the last one w/ solved = True
         close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
@@ -154,7 +133,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
             return solved, newNode
 
         # Recursively explore from this point
-        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
+        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1)
         if solved:
             return solved, lastNode
 
@@ -171,7 +150,7 @@ returns: [(x, y, heading, length, r), ...]
 def start_RRT_return_formated_path(startHeading):
     startXY = constants.ORIGIN_COORDS
     goalXY = constants.GOAL_COORDS
-    reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS, pygameScreen = None)
+    reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS)
 
     if not reached:
         return None

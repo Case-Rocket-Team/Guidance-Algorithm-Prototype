@@ -3,9 +3,6 @@
 ## Files
 Download / include files `rrt.py` and `constants.py` in the workspace. From `rrt.py`, import the function `start_RRT_return_formated_path`.
 This is the main function that will be used to actually run the algorithm.
-# IMPORTANT
-In `rrt.py`, delete line 2 `import pygame`. Yes this is dumb but I'm tired and don't want to go through the process of uncoupling pygame from everything right now.
-If I have free time this weekend you might be lucky and I may have done it already.
 
 ## Usage
 `start_RRT_return_formated_path` accepts a single argument in the form of a numpy array for the starting heading of the rocket, in terms of the x and y components of the heading vector (normalized). **ALL OTHER CONSTANTS** come from `constants.py`, such as the starting coords, goal coords, etc. This can easily be changed to use dynamic parameters if necessary.

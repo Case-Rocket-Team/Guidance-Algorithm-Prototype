@@ -29,7 +29,7 @@ while not reachedGoal:
     print('Trying for new RRT')
     screen.fill((255, 255, 255))
     #            origin (None), x,   y,          heading,      length, goal,maxIterations
-    reachedGoal, final_node = RRT((None, start_x, start_y, np.array([0, -1]), 0, None), goal_coords, constants.MAX_ITERATIONS, screen)
+    reachedGoal, final_node = RRT((None, start_x, start_y, np.array([0, -1]), 0, None), goal_coords, constants.MAX_ITERATIONS)
 
 print(final_node)
 

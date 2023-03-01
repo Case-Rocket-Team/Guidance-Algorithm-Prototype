@@ -171,6 +171,6 @@ def start_RRT_return_formated_path(startHeading):
         # move next r val to this node
         #x, y, theta, currentL, r
         new_node_item = (list_nodes[i][0], list_nodes[i][1], list_nodes[i][2], list_nodes[i][3], list_nodes[i + 1][4])
-        result[i] = new_node_item
+        result.append(new_node_item)
 
     return result

@@ -1,7 +1,7 @@
 import numpy as np
 import pygame
-import constants
-from rrt import RRT, circle_from, start_RRT_return_formated_path
+from . import constants
+from .rrt import RRT, circle_from, start_RRT_return_formated_path
 
 # Initialize pygame + some constants
 pygame.init()

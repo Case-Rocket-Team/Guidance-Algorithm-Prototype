@@ -1,5 +1,5 @@
 import numpy as np
-import constants
+from . import constants
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):

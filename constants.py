@@ -1,5 +1,6 @@
 # hectafeet test values
-GOAL_L = 100 * 6.5
+# GOAL_L = 100 * 6.5
+GOAL_L = 15_000
 MIN_TURN_RADIUS = 13
 LANDING_MARGIN = 13
 

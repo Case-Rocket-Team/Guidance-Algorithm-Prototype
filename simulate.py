@@ -41,8 +41,8 @@ class Simulation:
                 simulation_consts.GOAL_COORDS, 
                 simulation_consts.MAX_ITERATIONS, 
                 0,
-                pygameScreen = None,
-                constants = simulation_consts
+                simulation_consts,
+                pygameScreen = None
             )
 
             _, x, y, __, tot_length = final_node
@@ -59,6 +59,13 @@ class Simulation:
         avg_length = int(sum(lengths) / len(lengths))
         avg_points = int(sum(num_points) / len(num_points))
         percent_reached_goal = num_reached_goal / num_trials
+
+        print('Simulation chunk done')
+        print('Results:')
+        print(f'{avg_length}, {avg_points}, {percent_reached_goal}')
+        print('Output consts: ', output_consts)
+        print('============================================')
+        print()
         
         return (avg_length, avg_points, percent_reached_goal)
 
@@ -71,10 +78,10 @@ class Simulation:
         return (LANDING_MARGIN, ORIGIN_COORDS, GOAL_COORDS, SCREEN_DIM)
 
     def gen_random_outputs():
-        MAX_CURVE = int(np.random.uniform(20, 200))
-        NUM_POINTS = int(np.random.uniform(2, 20))
-        MAX_ITERATIONS = int(np.random.uniform(5, 50))
-        MAX_SEARCH_RAD = int(np.random.uniform(10, 200))
+        MAX_CURVE = int(np.random.uniform(200, 800))
+        NUM_POINTS = int(np.random.uniform(10, 30))
+        MAX_ITERATIONS = int(np.random.uniform(100, 800))
+        MAX_SEARCH_RAD = int(np.random.uniform(100, 400))
 
         return (MAX_CURVE, NUM_POINTS, MAX_ITERATIONS, MAX_SEARCH_RAD)
 
@@ -95,19 +102,25 @@ class Simulation:
         results = []
 
         for i in range(num_independent_trials):
-            input_consts = Simulation.gen_random_inputs()
+            # input_consts = Simulation.gen_random_inputs()
+            input_consts = (50, (800, 800), (300, 300), (350, 350))
 
             for j in range(num_dependent_trials):
                 output_consts = Simulation.gen_random_outputs()
 
                 result = Simulation.simulate_in_out_pair(input_consts, output_consts, num_simulation_trials)
                 cost = Simulation.cost_func(result)
-                results.append([result, cost])
+                results.append([result, cost, input_consts, output_consts])
         
         return results
 
-results = Simulation.run_simulations(10, 10, 20)
-print(results)
+results = Simulation.run_simulations(1, 50, 5)
+print('Done simulating')
+
+print('Results which had >= 0 percent of points reach goal:') 
+for result in results:
+    if result[0][2] > 0:
+        print(result)
 
 # DEPRECATED BUT COMMENTED OUT BECAUSE IM LAZY
 # row_list = [['id', 'indepID', 'LANDING_MARGIN', 'ORIGIN_COORDS_X', 'ORIGIN_COORDS_Y', 'GOAL_COORDS_X', 'GOAL_COORDS_Y', 'SCREEN_DIM_X', 'SCREEN_DIM_Y', 'MAX_CURVE', 'NUM_POINTS', 'MAX_ITERATIONS', 'MAX_SEARCH_RAD', 'avg_length', 'avg_points', 'num_reached_goal']]

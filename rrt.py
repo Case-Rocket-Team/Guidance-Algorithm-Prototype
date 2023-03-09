@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-import constants as consts
+# import constants as consts
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -56,7 +56,7 @@ def circle_from(p1,p2,tang):
 # Determines if a point is valid or not, meaning if a course can be plotted from the rocket's current position to the point using the circle_from function
 # point, heading = (x, y) tuple
 # returns tuple of (isValid, newHeading, newLength)
-def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
+def isPointValid(point, rocketPoint, heading, goalX, goalY, constants):
     x, y = point
     rocketX, rocketY, currentLength = rocketPoint
 
@@ -68,12 +68,26 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
     totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
     in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
-    big_enough = r > constants.MIN_TURN_RADIUS
-    small_enough = r < constants.MAX_CURVE
+    wide_enough = abs(r) > constants.MIN_TURN_RADIUS
+    small_enough = abs(r) < constants.MAX_CURVE
+    big_enough = length > constants.MIN_CURVE_LENGTH
     travellable = totalEstLength < constants.GOAL_L
 
+    # if not travellable:
+    #     print(f'Current length is {currentLength}, new length is {newLength}, and est length is {totalEstLength}')
+    #     print(f'{totalEstLength} is < ? {constants.GOAL_L} so travellable is {travellable}')
+    #     print('---')
+    # elif not big_enough:
+    #     print('Failed b/c not big enough')
+    #     print(f'{r} is < ? {constants.MIN_TURN_RADIUS} so big_enough is {big_enough}')
+    # elif not small_enough:
+    #     print('Failed b/c not small enough')
+    #     print(f'{r} is > ? {constants.MAX_CURVE} so small_enough is {small_enough}')
     
-    valid = in_field and big_enough and small_enough and travellable
+    valid = in_field and wide_enough and small_enough and travellable
+
+    if (newLength / constants.GOAL_L < 1 - constants.FINE_MOTOR_PERCENT):
+        valid = valid and big_enough
 
     return valid, newHeading, newLength
          
@@ -84,15 +98,17 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
-def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, constants = consts):
+def RRT(startCoord, goalCoord, maxIterations, tree_length, constants, pygameScreen = None):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
     # Every time a new point is explored, we decrement the maxIterations counter, and once it reaches 0 we stop exploring
     if maxIterations <= 0:
+        # print('Ran out of iterations')
         return solved, startCoord, tree_length
 
     if tree_length > constants.MAX_TREE_SIZE:
+        # print('Ran out of points')
         return solved, startCoord, tree_length
     
     # theta = current heading
@@ -157,9 +173,10 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, 
             return solved, newNode, tree_length
 
         # Recursively explore from this point
-        solved, lastNode, tree_length = RRT(newNode, goalCoord, maxIterations - 1, tree_length, pygameScreen)
+        solved, lastNode, tree_length = RRT(newNode, goalCoord, maxIterations - 1, tree_length, constants, pygameScreen)
         if solved:
             return solved, lastNode, tree_length
 
     # If this point reached, no viable points satisfied the solved conditions
+    # print('no viable points ', len(viablePoints))
     return solved, startCoord, tree_length

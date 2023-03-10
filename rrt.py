@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-import constants
+# import constants as consts
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -56,7 +56,7 @@ def circle_from(p1,p2,tang):
 # Determines if a point is valid or not, meaning if a course can be plotted from the rocket's current position to the point using the circle_from function
 # point, heading = (x, y) tuple
 # returns tuple of (isValid, newHeading, newLength)
-def isPointValid(point, rocketPoint, heading, goalX, goalY):
+def isPointValid(point, rocketPoint, heading, goalX, goalY, constants):
     x, y = point
     rocketX, rocketY, currentLength = rocketPoint
 
@@ -68,30 +68,48 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
     in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
-    big_enough = r > constants.MIN_TURN_RADIUS
-    small_enough = r < constants.MAX_CURVE
+    wide_enough = abs(r) > constants.MIN_TURN_RADIUS
+    # TODO: Decide if this is a necessary condition
+    # small_enough = abs(r) < constants.MAX_CURVE
     travellable = totalEstLength < constants.GOAL_L
-
     
-    valid = in_field and big_enough and small_enough and travellable
+    min_len_index = 0
+    max_len_index = 0
+    path_perct = newLength / constants.GOAL_L
 
+    for i in range(0, len(constants.DIST_THRESHOLDS) - 1):
+        if path_perct >= constants.DIST_THRESHOLDS[i] and path_perct <= constants.DIST_THRESHOLDS[i + 1]:
+            min_len_index = i
+            max_len_index = i
+
+    min_length = constants.MIN_CURVE_LENGTHS[min_len_index]
+    max_length = constants.MAX_CURVE_LENGTHS[max_len_index]
+
+    # print(f'We are {newLength / constants.GOAL_L}% of the way thru path, at dist {newLength}, and our min length is {min_length}')
+    big_enough = length > min_length
+    small_enough = length < max_length
+
+    valid = in_field and wide_enough and small_enough and big_enough and travellable
     return valid, newHeading, newLength
          
-
 """
     Rapidly-exploring Random Tree for parafoil pathfinding
     This algorithm will begin at the start coordinate, and sample random points around the current position and goal position.
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
-
-def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
+def RRT(startCoord, goalCoord, maxIterations, tree_length, constants, pygameScreen = None):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
     # Every time a new point is explored, we decrement the maxIterations counter, and once it reaches 0 we stop exploring
     if maxIterations <= 0:
-        return solved, startCoord
+        # print('Ran out of iterations')
+        return solved, startCoord, tree_length
+
+    if tree_length > constants.MAX_TREE_SIZE:
+        # print('Ran out of points')
+        return solved, startCoord, tree_length
     
     # theta = current heading
     # startPoint = tuple of previous point (if it exists, None if not)
@@ -111,7 +129,7 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     # For each of the random sample points, check if it's valid or not
     # if valid, add to list of valid points
     for point in randomPoints:
-        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1]) 
+        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1], constants) 
         if isValid:
             viablePoints.append((point, newHeading, newLength)) 
 
@@ -123,6 +141,8 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
     # Second step of RRT: go through valid points and make connections to each of them, then recursively explore using that point as the new start
     np.random.shuffle(viablePoints)
     for point, heading, length in viablePoints:
+        tree_length += 1
+
         x, y = point
 
         # This if block is just for correctly displaying the path we are exploring
@@ -149,13 +169,13 @@ def RRT(startCoord, goalCoord, maxIterations, pygameScreen = None):
         if close_enough and within_landing and wont_miss:
             print('length: ',length)
             solved = True
-            print('solved')
-            return solved, newNode
+            return solved, newNode, tree_length
 
         # Recursively explore from this point
-        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, pygameScreen)
+        solved, lastNode, tree_length = RRT(newNode, goalCoord, maxIterations - 1, tree_length, constants, pygameScreen)
         if solved:
-            return solved, lastNode
+            return solved, lastNode, tree_length
 
     # If this point reached, no viable points satisfied the solved conditions
-    return solved, startCoord
+    # print('no viable points ', len(viablePoints))
+    return solved, startCoord, tree_length

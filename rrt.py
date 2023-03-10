@@ -163,11 +163,11 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, constants, pygameScre
         # Check if we've reached our 'sovled conditions,' and if so, return this node as the last one w/ solved = True
         close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
         within_landing = length + constants.LANDING_MARGIN > constants.GOAL_L
-
+        wont_miss = np.abs(x + (constants.GOAL_L - length) * np.cos(heading[1]) - constants.GOAL_COORDS[0]) < constants.LANDING_MARGIN and np.abs(y + (constants.GOAL_L - length) * np.sin(heading[1]) - constants.GOAL_COORDS[1]) < constants.LANDING_MARGIN
         newNode = (startCoord, x, y, heading, length)
 
-
-        if close_enough and within_landing:
+        if close_enough and within_landing and wont_miss:
+            print('length: ',length)
             solved = True
             return solved, newNode, tree_length
 

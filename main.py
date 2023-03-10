@@ -64,6 +64,7 @@ while constants.DRAW_STUFF and running:
     # Print out some nice stats about the path we chose
     if printMe:
         print('Length of final path: ', tot_length)
+        print('Goal coordinates: ', goal_x,goal_y)
         print('X and Y of closest node: ', x, y)
         print('Drawing ideal path')
 
@@ -95,6 +96,7 @@ while constants.DRAW_STUFF and running:
     # Start and goal circles - draw last so they're on top
     pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)
     pygame.draw.circle(screen, (255, 255, 0), goal_coords, 5)
+    pygame.draw.arc(screen, (0, 255, 0), ((goal_coords[0] - 13, goal_coords[1] - 13), (26, 26)), 0, 360, 2)
 
     pygame.display.flip()
     printMe = False

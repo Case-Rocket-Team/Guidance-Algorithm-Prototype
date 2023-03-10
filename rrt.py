@@ -69,29 +69,29 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY, constants):
 
     in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
     wide_enough = abs(r) > constants.MIN_TURN_RADIUS
-    small_enough = abs(r) < constants.MAX_CURVE
-    big_enough = length > constants.MIN_CURVE_LENGTH
+    # TODO: Decide if this is a necessary condition
+    # small_enough = abs(r) < constants.MAX_CURVE
     travellable = totalEstLength < constants.GOAL_L
-
-    # if not travellable:
-    #     print(f'Current length is {currentLength}, new length is {newLength}, and est length is {totalEstLength}')
-    #     print(f'{totalEstLength} is < ? {constants.GOAL_L} so travellable is {travellable}')
-    #     print('---')
-    # elif not big_enough:
-    #     print('Failed b/c not big enough')
-    #     print(f'{r} is < ? {constants.MIN_TURN_RADIUS} so big_enough is {big_enough}')
-    # elif not small_enough:
-    #     print('Failed b/c not small enough')
-    #     print(f'{r} is > ? {constants.MAX_CURVE} so small_enough is {small_enough}')
     
-    valid = in_field and wide_enough and small_enough and travellable
+    min_len_index = 0
+    max_len_index = 0
+    path_perct = newLength / constants.GOAL_L
 
-    if (newLength / constants.GOAL_L < 1 - constants.FINE_MOTOR_PERCENT):
-        valid = valid and big_enough
+    for i in range(0, len(constants.DIST_THRESHOLDS) - 1):
+        if path_perct >= constants.DIST_THRESHOLDS[i] and path_perct <= constants.DIST_THRESHOLDS[i + 1]:
+            min_len_index = i
+            max_len_index = i
 
+    min_length = constants.MIN_CURVE_LENGTHS[min_len_index]
+    max_length = constants.MAX_CURVE_LENGTHS[max_len_index]
+
+    # print(f'We are {newLength / constants.GOAL_L}% of the way thru path, at dist {newLength}, and our min length is {min_length}')
+    big_enough = length > min_length
+    small_enough = length < max_length
+
+    valid = in_field and wide_enough and small_enough and big_enough and travellable
     return valid, newHeading, newLength
          
-
 """
     Rapidly-exploring Random Tree for parafoil pathfinding
     This algorithm will begin at the start coordinate, and sample random points around the current position and goal position.
@@ -166,10 +166,9 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, constants, pygameScre
 
         newNode = (startCoord, x, y, heading, length)
 
+
         if close_enough and within_landing:
-            # print('length: ',length)
             solved = True
-            # print('solved')
             return solved, newNode, tree_length
 
         # Recursively explore from this point

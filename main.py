@@ -1,7 +1,8 @@
 import numpy as np
 import pygame
 import constants
-from rrt import RRT, circle_from
+from rrt import RRT, circle_from, find_path
+import time
 
 # Initialize pygame + some constants
 size = width, height = constants.SCREEN_DIM
@@ -27,24 +28,26 @@ if constants.DRAW_STUFF:
 printMe = True
 
 # Generate tree
-reachedGoal = False
-while not reachedGoal:
-    print('Trying for new RRT')
+print('Trying for new RRT')
 
-    pygameScreen = None
-    if constants.DRAW_STUFF:
-        screen.fill((255, 255, 255))
-        pygameScreen = screen
+pygameScreen = None
+if constants.DRAW_STUFF:
+    screen.fill((255, 255, 255))
+    pygameScreen = screen
 
-    reachedGoal, final_node = RRT(
-        (None, start_x, start_y, np.array([0, -1]), 0), 
-        goal_coords, 
-        constants.MAX_ITERATIONS, 
-        [],
-        pygameScreen
-        )
+final_node, final_length = find_path(
+    (None, start_x, start_y, np.array([0, -1]), 0), 
+    goal_coords, 
+    15000 * 6.5,
+    pygameScreen
+)
 
-print(final_node)
+try: 
+    print(final_node)
+except:
+    print('lmao the final node is to big to print')
+
+
 if constants.DRAW_STUFF:
     screen.fill((255, 255, 255))
 
@@ -59,11 +62,11 @@ while constants.DRAW_STUFF and running:
 
     # Print out some nice stats about the path we chose
     if printMe:
-        print('Length of final path: ', tot_length)
+        print('Length of final path: ', final_length)
         print('X and Y of closest node: ', x, y)
         print('Drawing ideal path')
 
-    while parentNode is not None:
+    while printMe and parentNode is not None:
         _, x, y, _b, _c = currentNode
         _, parentX, parentY, tang, _c = parentNode
         radius, arclen, newHead, center = circle_from(np.array([parentX, parentY]), np.array([x, y]), tang)
@@ -80,6 +83,9 @@ while constants.DRAW_STUFF and running:
         pygame.draw.arc(screen, (255, 165, 0), (center[0] - radius, center[1] - radius, radius * 2, radius * 2), startRadians, endRadians, 2)
         currentNode = parentNode
         parentNode = currentNode[0]
+
+        pygame.display.flip()
+        time.sleep(0.05)
 
     # Start and goal circles - draw last so they're on top
     pygame.draw.circle(screen, (0, 0, 0), (start_x, start_y), 5)

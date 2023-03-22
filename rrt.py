@@ -56,7 +56,7 @@ def circle_from(p1,p2,tang):
 # Determines if a point is valid or not, meaning if a course can be plotted from the rocket's current position to the point using the circle_from function
 # point, heading = (x, y) tuple
 # returns tuple of (isValid, newHeading, newLength)
-def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
+def isPointValid(point, rocketPoint, heading, goalX, goalY, chunk_len, constants = consts):
     x, y = point
     rocketX, rocketY, currentLength = rocketPoint
 
@@ -68,9 +68,9 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
     totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
     in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
-    big_enough = r > constants.MIN_TURN_RADIUS
-    small_enough = r < constants.MAX_CURVE
-    travellable = totalEstLength < constants.GOAL_L
+    big_enough = abs(r) > constants.MIN_TURN_RADIUS
+    small_enough = abs(r) < constants.MAX_CURVE
+    travellable = totalEstLength < chunk_len
 
     
     valid = in_field and big_enough and small_enough and travellable
@@ -84,19 +84,14 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY, constants = consts):
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
-def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, constants = consts):
+def RRT(startCoord, goalCoord, maxIterations, chunk_len, pygameScreen = None, constants = consts):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
     # Every time a new point is explored, we decrement the maxIterations counter, and once it reaches 0 we stop exploring
     if maxIterations <= 0:
-        return solved, startCoord, tree_length
+        return solved, startCoord
 
-    if tree_length > constants.MAX_TREE_SIZE:
-        return solved, startCoord, tree_length
-    
-    # theta = current heading
-    # startPoint = tuple of previous point (if it exists, None if not)
     startPoint, startX, startY, theta, currentL = startCoord
 
     # First step of RRT: generate lots of random sample points
@@ -113,7 +108,7 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, 
     # For each of the random sample points, check if it's valid or not
     # if valid, add to list of valid points
     for point in randomPoints:
-        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1], constants) 
+        isValid, newHeading, newLength = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1], chunk_len, constants) 
         if isValid:
             viablePoints.append((point, newHeading, newLength)) 
 
@@ -125,8 +120,6 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, 
     # Second step of RRT: go through valid points and make connections to each of them, then recursively explore using that point as the new start
     np.random.shuffle(viablePoints)
     for point, heading, length in viablePoints:
-        tree_length += 1
-
         x, y = point
 
         # This if block is just for correctly displaying the path we are exploring
@@ -146,7 +139,7 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, 
 
         # Check if we've reached our 'sovled conditions,' and if so, return this node as the last one w/ solved = True
         close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
-        within_landing = length + constants.LANDING_MARGIN > constants.GOAL_L
+        within_landing = length + constants.LANDING_MARGIN > chunk_len
 
         newNode = (startCoord, x, y, heading, length)
 
@@ -154,12 +147,49 @@ def RRT(startCoord, goalCoord, maxIterations, tree_length, pygameScreen = None, 
             # print('length: ',length)
             solved = True
             # print('solved')
-            return solved, newNode, tree_length
+            return solved, newNode
 
         # Recursively explore from this point
-        solved, lastNode, tree_length = RRT(newNode, goalCoord, maxIterations - 1, tree_length, pygameScreen)
+        solved, lastNode= RRT(newNode, goalCoord, maxIterations - 1, chunk_len, pygameScreen)
         if solved:
-            return solved, lastNode, tree_length
+            return solved, lastNode
 
     # If this point reached, no viable points satisfied the solved conditions
-    return solved, startCoord, tree_length
+    return solved, startCoord
+
+def find_path(startCoord, goalCoord, actual_goal_l, pygameScreen = None, constants = consts):
+    current_length_traveled = 0
+
+    DEFAULT_CHUNK_LEN = 100 * 6.5
+    chunk_len = DEFAULT_CHUNK_LEN
+    num_chunks = actual_goal_l // chunk_len
+
+    print('Beginning chunks ', num_chunks)
+    i = 0
+    while abs(current_length_traveled - actual_goal_l) > chunk_len:
+        # print('At chunk ', i, ' of ', num_chunks)
+        solved, lastNode = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, chunk_len, pygameScreen, consts)
+
+        if solved:
+            print(f'Chunk solved')
+            _, x, y, heading, length = lastNode
+            current_length_traveled += length
+            print(f'The length of the path was {length}, which means our current length is now {current_length_traveled}')
+            startCoord = (lastNode, x, y, heading, 0)
+            i += 1
+
+    print(f'After static sized chunks, current length is {current_length_traveled} compared to our goal of {actual_goal_l}')
+
+    remaining_dist = actual_goal_l - current_length_traveled
+    final_portion_solved = False
+    final_node = None
+
+    print(f'Beginning final chunk of length {remaining_dist}')
+    while not final_portion_solved:
+        final_portion_solved, final_node = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, remaining_dist, pygameScreen, consts)
+
+    _, _, _, _, length = final_node
+    final_length = current_length_traveled + length
+    print('solved, final length is ', final_length)
+
+    return final_node, final_length

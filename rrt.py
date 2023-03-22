@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-# import constants as consts
+import constants as consts
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -75,7 +75,6 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY, chunk_len, constants
     
     valid = in_field and big_enough and small_enough and travellable
 
-    valid = in_field and wide_enough and small_enough and big_enough and travellable
     return valid, newHeading, newLength
          
 """
@@ -143,14 +142,14 @@ def RRT(startCoord, goalCoord, maxIterations, chunk_len, pygameScreen = None, co
 
         newNode = (startCoord, x, y, heading, length)
 
-        if close_enough and within_landing and wont_miss:
+        if close_enough and within_landing:
             print('length: ',length)
             solved = True
             # print('solved')
             return solved, newNode
 
         # Recursively explore from this point
-        solved, lastNode= RRT(newNode, goalCoord, maxIterations - 1, chunk_len, pygameScreen)
+        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, chunk_len, pygameScreen)
         if solved:
             return solved, lastNode
 

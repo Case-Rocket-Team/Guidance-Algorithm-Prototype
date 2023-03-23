@@ -1,5 +1,6 @@
 import numpy as np
 from . import constants
+from progressbar import printProgressBar
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -55,7 +56,7 @@ def circle_from(p1,p2,tang):
 # Determines if a point is valid or not, meaning if a course can be plotted from the rocket's current position to the point using the circle_from function
 # point, heading = (x, y) tuple
 # returns tuple of (isValid, newHeading, newLength)
-def isPointValid(point, rocketPoint, heading, goalX, goalY):
+def isPointValid(point, rocketPoint, heading, goalX, goalY, chunk_len):
     x, y = point
     rocketX, rocketY, currentLength = rocketPoint
 
@@ -67,24 +68,22 @@ def isPointValid(point, rocketPoint, heading, goalX, goalY):
     totalEstLength = newLength + np.sqrt((x - goalX) ** 2 + (y - goalY) ** 2)
 
     # in_field = x > 0 and y > 0 and x < constants.SCREEN_DIM[0] and y < constants.SCREEN_DIM[1]
-    big_enough = r > constants.MIN_TURN_RADIUS
-    small_enough = r < constants.MAX_CURVE
-    travellable = totalEstLength < constants.GOAL_L
+    big_enough = abs(r) > constants.MIN_TURN_RADIUS
+    small_enough = abs(r) < constants.MAX_CURVE
+    travellable = totalEstLength < chunk_len
 
     
     valid = big_enough and small_enough and travellable
 
     return valid, newHeading, newLength, r
          
-
 """
     Rapidly-exploring Random Tree for parafoil pathfinding
     This algorithm will begin at the start coordinate, and sample random points around the current position and goal position.
     It will then determine which of these points are viable given the turn radius and maximum distance travellable.
     Once viable points are found, it will connect them to the current point, and for each of these new points repeat this process until we reach the goal.
 """
-
-def RRT(startCoord, goalCoord, maxIterations):
+def RRT(startCoord, goalCoord, maxIterations, chunk_len):
     solved = False
 
     # Max iterations is a constraint which keeps the simulation from running forever
@@ -110,7 +109,7 @@ def RRT(startCoord, goalCoord, maxIterations):
     # For each of the random sample points, check if it's valid or not
     # if valid, add to list of valid points
     for point in randomPoints:
-        isValid, newHeading, newLength, radius = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1]) 
+        isValid, newHeading, newLength, radius = isPointValid(point, (startX, startY, currentL), (theta[0], theta[1]), goalCoord[0], goalCoord[1], chunk_len) 
         if isValid:
             viablePoints.append((point, newHeading, newLength, radius)) 
 
@@ -122,18 +121,16 @@ def RRT(startCoord, goalCoord, maxIterations):
 
         # Check if we've reached our 'sovled conditions,' and if so, return this node as the last one w/ solved = True
         close_enough = np.sqrt((x - goalCoord[0]) ** 2 + (y - goalCoord[1]) ** 2) < constants.LANDING_MARGIN
-        within_landing = length + constants.LANDING_MARGIN > constants.GOAL_L
+        within_landing = length + constants.LANDING_MARGIN > chunk_len
 
         newNode = (startCoord, x, y, heading, length, r)
 
         if close_enough and within_landing:
-            print('length: ',length)
             solved = True
-            print('solved')
             return solved, newNode
 
         # Recursively explore from this point
-        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1)
+        solved, lastNode = RRT(newNode, goalCoord, maxIterations - 1, chunk_len)
         if solved:
             return solved, lastNode
 
@@ -174,3 +171,37 @@ def start_RRT_return_formated_path(startHeading):
         result.append(new_node_item)
 
     return result
+
+def find_path(startCoord, goalCoord, actual_goal_l, pygameScreen = None, constants = consts):
+    current_length_traveled = 0
+
+    DEFAULT_CHUNK_LEN = 100 * 6.5
+    chunk_len = DEFAULT_CHUNK_LEN
+    num_chunks = actual_goal_l // chunk_len
+
+    print('Beginning RRT Algorithm')
+    printProgressBar(0, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
+
+    while abs(current_length_traveled - actual_goal_l) > chunk_len:
+        solved, lastNode = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, chunk_len, pygameScreen, consts)
+
+        if solved:
+            _, x, y, heading, length = lastNode
+            current_length_traveled += length
+            startCoord = (lastNode, x, y, heading, 0)
+            printProgressBar(current_length_traveled, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
+
+    print(f'After static sized chunks, current length is {current_length_traveled} compared to our goal of {actual_goal_l}')
+
+    remaining_dist = actual_goal_l - current_length_traveled
+    final_portion_solved = False
+    final_node = None
+
+    print(f'Beginning final chunk of length {remaining_dist}')
+    while not final_portion_solved:
+        final_portion_solved, final_node = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, remaining_dist, pygameScreen, consts)
+
+    _, _, _, _, length = final_node
+    final_length = current_length_traveled + length
+
+    return final_node, final_length

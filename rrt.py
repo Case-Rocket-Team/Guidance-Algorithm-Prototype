@@ -147,10 +147,7 @@ returns: [(x, y, heading, length, r), ...]
 def start_RRT_return_formated_path(startHeading):
     startXY = constants.ORIGIN_COORDS
     goalXY = constants.GOAL_COORDS
-    reached, final_node = RRT((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.MAX_ITERATIONS)
-
-    if not reached:
-        return None
+    final_node, final_length = find_path((None, startXY[0], startXY[1], startHeading, 0, None), goalXY, constants.GOAL_L)
 
     list_nodes = []
 
@@ -172,36 +169,41 @@ def start_RRT_return_formated_path(startHeading):
 
     return result
 
-def find_path(startCoord, goalCoord, actual_goal_l, pygameScreen = None, constants = consts):
+def find_path(startCoord, goalCoord, actual_goal_l):
     current_length_traveled = 0
 
     DEFAULT_CHUNK_LEN = 100 * 6.5
     chunk_len = DEFAULT_CHUNK_LEN
     num_chunks = actual_goal_l // chunk_len
 
-    print('Beginning RRT Algorithm')
-    printProgressBar(0, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
+    if (constants.PRINT):
+        print('Beginning RRT Algorithm')
+        printProgressBar(0, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
 
     while abs(current_length_traveled - actual_goal_l) > chunk_len:
-        solved, lastNode = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, chunk_len, pygameScreen, consts)
+        solved, lastNode = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, chunk_len)
 
         if solved:
-            _, x, y, heading, length = lastNode
+            _, x, y, heading, length, radius = lastNode
             current_length_traveled += length
-            startCoord = (lastNode, x, y, heading, 0)
-            printProgressBar(current_length_traveled, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
+            startCoord = (lastNode, x, y, heading, 0, radius)
+            if (constants.PRINT):
+                printProgressBar(current_length_traveled, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
 
-    print(f'After static sized chunks, current length is {current_length_traveled} compared to our goal of {actual_goal_l}')
+    if (constants.PRINT):
+        print(f'After static sized chunks, current length is {current_length_traveled} compared to our goal of {actual_goal_l}')
 
     remaining_dist = actual_goal_l - current_length_traveled
     final_portion_solved = False
     final_node = None
 
-    print(f'Beginning final chunk of length {remaining_dist}')
-    while not final_portion_solved:
-        final_portion_solved, final_node = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, remaining_dist, pygameScreen, consts)
+    if (constants.PRINT):
+        print(f'Beginning final chunk of length {remaining_dist}')
 
-    _, _, _, _, length = final_node
+    while not final_portion_solved:
+        final_portion_solved, final_node = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, remaining_dist)
+
+    _, _, _, _, length, _ = final_node
     final_length = current_length_traveled + length
 
     return final_node, final_length

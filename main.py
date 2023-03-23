@@ -28,14 +28,12 @@ if constants.DRAW_STUFF:
 
 printMe = True
 
-# Generate tree
-print('Trying for new RRT')
-
 pygameScreen = None
 if constants.DRAW_STUFF:
     screen.fill((255, 255, 255))
     pygameScreen = screen
 
+# Generate tree
 final_node, final_length = find_path(
     (None, start_x, start_y, np.array([0, -1]), 0), 
     goal_coords, 
@@ -46,7 +44,14 @@ final_node, final_length = find_path(
 try: 
     print(final_node)
 except:
-    print('lmao the final node is to big to print')
+    print('Final path too long to print, saving to .txt')
+    node_list = []
+    node = final_node
+    while node is not None:
+        node_list.append((node[1], node[2], node[3], node[4]))
+        node = node[0]
+    with open('final_path.txt', 'w') as f:
+        f.write(str(node_list))
 
 
 if constants.DRAW_STUFF:
@@ -65,9 +70,9 @@ while constants.DRAW_STUFF and running:
 
     # Print out some nice stats about the path we chose
     if printMe:
+        print('Path stats:')
         print('Length of final path: ', final_length)
         print('X and Y of closest node: ', x, y)
-        print('Drawing ideal path')
 
     while printMe and parentNode is not None:
         _, x, y, _b, _c = currentNode

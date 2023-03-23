@@ -1,6 +1,7 @@
 import numpy as np
 import pygame
 import constants as consts
+from progressbar import printProgressBar
 
 # Samples numPts random points around the given x, y in a circle of radius r
 def samplePointsAround(x, y, r, numPts):
@@ -143,9 +144,7 @@ def RRT(startCoord, goalCoord, maxIterations, chunk_len, pygameScreen = None, co
         newNode = (startCoord, x, y, heading, length)
 
         if close_enough and within_landing:
-            print('length: ',length)
             solved = True
-            # print('solved')
             return solved, newNode
 
         # Recursively explore from this point
@@ -163,19 +162,17 @@ def find_path(startCoord, goalCoord, actual_goal_l, pygameScreen = None, constan
     chunk_len = DEFAULT_CHUNK_LEN
     num_chunks = actual_goal_l // chunk_len
 
-    print('Beginning chunks ', num_chunks)
-    i = 0
+    print('Beginning RRT Algorithm')
+    printProgressBar(0, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
+
     while abs(current_length_traveled - actual_goal_l) > chunk_len:
-        # print('At chunk ', i, ' of ', num_chunks)
         solved, lastNode = RRT(startCoord, goalCoord, constants.MAX_ITERATIONS, chunk_len, pygameScreen, consts)
 
         if solved:
-            print(f'Chunk solved')
             _, x, y, heading, length = lastNode
             current_length_traveled += length
-            print(f'The length of the path was {length}, which means our current length is now {current_length_traveled}')
             startCoord = (lastNode, x, y, heading, 0)
-            i += 1
+            printProgressBar(current_length_traveled, actual_goal_l - constants.LANDING_MARGIN, prefix = 'Path length: ', suffix = f'of {actual_goal_l}ft')
 
     print(f'After static sized chunks, current length is {current_length_traveled} compared to our goal of {actual_goal_l}')
 
@@ -189,6 +186,5 @@ def find_path(startCoord, goalCoord, actual_goal_l, pygameScreen = None, constan
 
     _, _, _, _, length = final_node
     final_length = current_length_traveled + length
-    print('solved, final length is ', final_length)
 
     return final_node, final_length

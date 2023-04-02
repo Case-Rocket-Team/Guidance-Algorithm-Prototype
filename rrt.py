@@ -1,5 +1,6 @@
 import numpy as np
 from . import constants
+from .rust_funcs import circle_from
 from progressbar import printProgressBar
 
 # Samples numPts random points around the given x, y in a circle of radius r
@@ -37,6 +38,7 @@ def samplePointsInLine(x1, y1, x2, y2, numPts):
 # Function for generating a circle given two points and a tangent (heading) vector
 # Args must be in np array form
 # Written by Ben :3
+"""
 def circle_from(p1,p2,tang):
     tang = tang / np.linalg.norm(tang) # normalize tangent vector
     pvec = (p2-p1) # find the difference between our two points
@@ -51,7 +53,7 @@ def circle_from(p1,p2,tang):
     pc = (center - p2) * np.sign(radius)
     head_new = np.array([-pc[1],pc[0]])
     return radius, arclen, head_new, center
-
+"""
 
 # Determines if a point is valid or not, meaning if a course can be plotted from the rocket's current position to the point using the circle_from function
 # point, heading = (x, y) tuple

@@ -1,25 +1,28 @@
 const MAX_HEAP_SIZE: usize = 127;
 
-struct BinaryHeap<T: Ord + Copy> {
+pub struct BinaryHeap<T: Ord + Copy> {
     heap: [Option<T>; MAX_HEAP_SIZE],
     size: usize,
 }
 
 impl<T: Ord + Copy> BinaryHeap<T> {
-    fn new() -> BinaryHeap<T> {
+    pub fn new() -> BinaryHeap<T> {
         BinaryHeap {
             heap: [None; MAX_HEAP_SIZE],
             size: 0,
         }
     }
 
-    fn push(&mut self, item: T) {
+    pub fn push(&mut self, item: T) {
         if self.size >= MAX_HEAP_SIZE {
             panic!("Heap overflow");
         }
         let index = self.size;
         self.heap[index] = Some(item);
         self.size += 1;
+        if self.size == 1 {
+            return;
+        }
         let mut current = index;
         let mut parent = (current - 1) / 2;
         // TODO: unwrap_or 
@@ -30,7 +33,7 @@ impl<T: Ord + Copy> BinaryHeap<T> {
         }
     }
 
-    fn pop(&mut self) -> Option<T> {
+    pub fn pop(&mut self) -> Option<T> {
         if self.size == 0 {
             return None;
         }

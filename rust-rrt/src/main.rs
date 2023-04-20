@@ -26,7 +26,7 @@ fn main() {
     let mut rrt = rrt::RRTWrapper::new(start, goal, hp);
 
     loop {
-        if let Some(path) = errt.step() {
+        if let Some(path) = rrt.step() {
             for point in path.iter() {
                 if let Some(point) = point {
                     println!("({}, {})", point.coords.0, point.coords.1);

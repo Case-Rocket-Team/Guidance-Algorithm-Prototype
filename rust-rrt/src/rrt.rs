@@ -142,15 +142,14 @@ impl RRTWrapper {
             if DO_DEBUG {
                 print_point(pnt);
             }
-
+            let dist_remain = pnt.gas - pnt.dist_2_goal.unwrap();
             let (_, arc_len, _, _) = circle_from(pnt.coords, self.goal.coords, pnt.tang);
-            if arc_len < self.hp.margin {
+            if arc_len <= self.hp.margin && dist_remain <= arc_len { //TODO and the gas is close to 0
                 return Some(idx);
             }
 
             let mut num_points = 0;
             while num_points < self.hp.num_points {
-                let dist_remain = pnt.gas - pnt.dist_2_goal.unwrap();
                 let new_pnt = pnt.gen_rand_point(self.goal, dist_remain, self.hp.min_turn);
 
                 let new_dist_remain = new_pnt.gas - new_pnt.dist_2_goal.unwrap();
@@ -162,6 +161,8 @@ impl RRTWrapper {
                     num_points += 1;
                 }
             }
+        } else {
+            //TODO search ig
         }
         return None;
     }

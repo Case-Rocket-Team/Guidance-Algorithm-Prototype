@@ -26,8 +26,12 @@ impl<T: Ord + Copy> BinaryHeap<T> {
         let mut current = index;
         let mut parent = (current - 1) / 2;
         // TODO: unwrap_or 
-        while current > 0 && self.heap[parent].as_ref().unwrap() > self.heap[current].as_ref().unwrap() {
+        while self.heap[parent].as_ref().unwrap() > self.heap[current].as_ref().unwrap() {
             self.heap.swap(current, parent);
+            if (parent == 0){ //check for if the item bubbles up to the top of the heap
+                //parent = null;
+                return;
+            }
             current = parent;
             parent = (current - 1) / 2;
         }

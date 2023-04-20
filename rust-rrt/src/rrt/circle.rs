@@ -18,7 +18,7 @@ pub extern "C" fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isi
         let tang_3 = (tang_norm.0, tang_norm.1, 0.0);
         let sin_phi = cross(pvec_3, tang_3).2;
         let radius = pnorm / (2.0 * sin_phi);
-        let arclen = radius * sin_phi.abs().asin();
+        let arclen = radius * sin_phi.abs().asin() * 2.0;
         (arclen, sin_phi, radius)
     };
 

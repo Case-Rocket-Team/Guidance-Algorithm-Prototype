@@ -11,8 +11,10 @@ pub extern "C" fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isi
 
     let cos_angle = pvec_normalized.0 * tang_norm.0 + pvec_normalized.1 * tang_norm.1;
 
-    let (arclen, sin_phi, radius) = if (cos_angle - 1.0).abs() < 1e-8  { //TODO this might cause an issue with opposite directions - for now ignore
-        (pnorm, 0.0, 0.0)
+    let (arclen, sin_phi, radius) = if (cos_angle - 1.0).abs() < f64::EPSILON {
+        (pnorm, 0.0, f64::INFINITY)
+    } else if (cos_angle + 1.0).abs() < f64::EPSILON { // Added condition
+        (f64::INFINITY, -1.0, 0.0)
     } else {
         let pvec_3 = (pvec.0 / pnorm, pvec.1 / pnorm, 0.0);
         let tang_3 = (tang_norm.0, tang_norm.1, 0.0);
@@ -34,6 +36,7 @@ pub extern "C" fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isi
         (center.0.round() as isize, center.1.round() as isize),
     )
 }
+
 
 
 fn norm(vector: (f64, f64)) -> f64 {

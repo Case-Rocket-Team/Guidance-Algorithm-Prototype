@@ -51,8 +51,11 @@ impl Point<isize> {
     fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, search_rad: isize) -> Point<isize> {
         let mut rng = rand::thread_rng();
         loop {
-            let dx = rng.gen_range(-search_rad..search_rad);
-            let dy = rng.gen_range(-search_rad..search_rad);
+            let (dx, dy)  = if search_rad <= 1 {
+                (0,0)
+            }else {
+                (rng.gen_range(-search_rad..search_rad),rng.gen_range(-search_rad..search_rad))
+            };
 
             let (radius, arclen, head_new, center) = circle_from(self.coords, (self.coords.0 + dx, self.coords.1 + dy), self.tang);
             if radius >= min_rad {
@@ -70,7 +73,7 @@ impl Point<isize> {
 
 fn valid_point(pnt: Point<isize>, goal: Point<isize>) -> bool {
     let (_, arc_len, _, _) = circle_from(pnt.coords, goal.coords, pnt.tang);
-    arc_len <= pnt.gas
+    arc_len <= pnt.gas && pnt.gas > 0 && pnt.dist_2_goal.unwrap_or(1) > 0
 }
 
 pub struct HyperParams {
@@ -144,13 +147,13 @@ impl RRTWrapper {
             }
             let dist_remain = pnt.gas - pnt.dist_2_goal.unwrap();
             let (_, arc_len, _, _) = circle_from(pnt.coords, self.goal.coords, pnt.tang);
-            if arc_len <= self.hp.margin && dist_remain <= arc_len { //TODO and the gas is close to 0
+            if dist_remain <= self.hp.margin { //TODO and the gas is close to 0
                 return Some(idx);
             }
 
             let mut num_points = 0;
             while num_points < self.hp.num_points {
-                let new_pnt = pnt.gen_rand_point(self.goal, dist_remain, self.hp.min_turn);
+                let new_pnt = pnt.gen_rand_point(self.goal, self.hp.min_turn,dist_remain);
 
                 let new_dist_remain = new_pnt.gas - new_pnt.dist_2_goal.unwrap();
                 if valid_point(new_pnt, self.goal) && new_dist_remain >= 0 {

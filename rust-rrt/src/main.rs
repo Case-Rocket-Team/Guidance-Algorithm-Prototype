@@ -2,15 +2,15 @@ mod rrt;
 
 fn main() {
     let goal = rrt::Point {
-        coords: (100, 100),
+        coords: (20, 30),
         tang: (0, 0),
-        gas: 1000,
+        gas: 0,
         dist_2_goal: None,
     };
     let mut start = rrt::Point {
-        coords: (0, 0),
-        tang: (1, 1),
-        gas: 1000,
+        coords: (10, 20),
+        tang: (1, 3),
+        gas: 1500,
         dist_2_goal: None,
     };
     let (_, arc_len, _, _) = rrt::circle::circle_from(start.coords, goal.coords, start.tang);

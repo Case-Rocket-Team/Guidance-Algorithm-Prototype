@@ -13,6 +13,7 @@ const MAX_PATH_LENGTH: usize = 127;
 const DO_DEBUG: bool = true;
 
 #[derive(Eq, PartialEq, PartialOrd, Copy, Clone)]
+#[repr(C)]
 pub struct Point<T>
 where
     T: Sub + Ord + Copy,
@@ -48,6 +49,15 @@ where
 }
 
 impl Point<isize> {
+    #[no_mangle]
+    pub extern "C" fn point_new(x: isize, y: isize, tx: isize, ty: isize, gas: isize) -> Point<isize> {
+        Point {
+            coords: (x, y),
+            tang: (tx, ty),
+            gas,
+            dist_2_goal: None,
+        }
+    }
     fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, search_rad: isize) -> Point<isize> {
         let mut rng = rand::thread_rng();
         loop {
@@ -75,7 +85,7 @@ fn valid_point(pnt: Point<isize>, goal: Point<isize>) -> bool {
     let (_, arc_len, _, _) = circle_from(pnt.coords, goal.coords, pnt.tang);
     arc_len <= pnt.gas && pnt.gas > 0 && pnt.dist_2_goal.unwrap_or(1) > 0
 }
-
+#[repr(C)]
 pub struct HyperParams {
     pub num_points: usize,
     pub min_turn: isize,
@@ -84,6 +94,22 @@ pub struct HyperParams {
     pub margin: isize,
 }
 
+
+impl HyperParams {
+    #[no_mangle]
+    pub extern "C" fn hp_new(num_points: usize, min_turn: isize, max_curve: isize, max_search: isize, margin: isize) -> HyperParams {
+        HyperParams {
+            num_points,
+            min_turn,
+            max_curve,
+            max_search,
+            margin,
+        }
+    }
+}
+
+
+#[repr(C)]
 pub struct RRTWrapper {
     start: Point<isize>,
     goal: Point<isize>,
@@ -94,7 +120,7 @@ pub struct RRTWrapper {
 
 impl RRTWrapper {
     #[no_mangle]
-    pub fn new(start: Point<isize>, goal: Point<isize>, hp: HyperParams) -> Self {
+    pub extern "C" fn rrt_new(start: Point<isize>, goal: Point<isize>, hp: HyperParams) -> Self {
         let mut r = RRTWrapper {
             start,
             goal,
@@ -107,7 +133,7 @@ impl RRTWrapper {
     }
 
     #[no_mangle]
-    pub fn step(&mut self) -> Option<[Option<Point<isize>>; MAX_PATH_LENGTH]> {
+    pub extern "C" fn step(&mut self) -> Option<[Option<Point<isize>>; MAX_PATH_LENGTH]> {
         if let Some(idx) = self.rrt() {
             Some(self.get_path_fixed_size(idx))
         } else {

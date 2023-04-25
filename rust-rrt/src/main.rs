@@ -23,7 +23,7 @@ fn main() {
         margin: 5,
     };
 
-    let mut rrt = rrt::RRTWrapper::new(start, goal, hp);
+    let mut rrt = rrt::RRTWrapper::rrt_new(start, goal, hp);
 
     loop {
         if let Some(path) = rrt.step() {

@@ -3,7 +3,7 @@ import numpy as np
 import pygame
 import rust_funcs
 
-print(rust_funcs.run_rrt(10,20,(1,3),20,30,1500))
+rust_funcs.rrt(10,20,1,3,30,50,1000)
 """
 # Initialize pygame + some constants
 size = width, height = constants.SCREEN_DIM

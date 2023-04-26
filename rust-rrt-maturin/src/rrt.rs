@@ -107,7 +107,6 @@ impl HyperParams {
 }
 
 
-#[repr(C)]
 pub struct RRTWrapper {
     start: Point<isize>,
     goal: Point<isize>,

@@ -4,13 +4,14 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/rust-rrt/target/debug/rust_rrt_binati",
+            "program": "${workspaceFolder}/rust-rrt-maturin/target/debug/rust_rrt",
             "args": [],
-            "cwd": "${workspaceFolder}/rust-rrt"
+            "cwd": "${workspaceFolder}/rust-rrt-maturin"
         }
     ]
 }

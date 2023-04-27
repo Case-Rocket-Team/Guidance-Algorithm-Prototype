@@ -6,7 +6,7 @@
 	],
 	"settings": {
 		"rust-analyzer.linkedProjects": [
-			"./rust-rrt/Cargo.toml"
+			"./rust-rrt-maturin/Cargo.toml"
 		]
 	}
 }

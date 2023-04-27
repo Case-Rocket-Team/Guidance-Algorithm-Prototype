@@ -56,7 +56,7 @@ impl Point<isize> {
             dist_2_goal: None,
         }
     }
-    fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, search_rad: isize) -> Point<isize> {
+    fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, max_rad: isize, search_rad: isize) -> Point<isize> {
         let mut rng = rand::thread_rng();
         loop {
             let (dx, dy)  = if search_rad <= 1 {
@@ -65,11 +65,11 @@ impl Point<isize> {
                 (rng.gen_range(-search_rad..search_rad),rng.gen_range(-search_rad..search_rad))
             };
 
-            let (radius, arclen, head_new, center) = circle_from(self.coords, (self.coords.0 + dx, self.coords.1 + dy), self.tang);
-            if radius >= min_rad {
-                let (_, dist_goal, _, _) = circle_from((self.coords.0 + dx, self.coords.1 + dy), goal.coords, head_new);
+            let (radius, arclen, head_new, _) = circle_from(self.coords, (goal.coords.0 + dx, goal.coords.1 + dy), self.tang);
+            if radius >= min_rad && radius <= max_rad {
+                let (_, dist_goal, _, _) = circle_from((goal.coords.0 + dx, goal.coords.1 + dy), goal.coords, head_new);
                 return Point {
-                    coords: (self.coords.0 + dx, self.coords.1 + dy),
+                    coords: (goal.coords.0 + dx, goal.coords.1 + dy),
                     tang: head_new,
                     gas: self.gas - arclen,
                     dist_2_goal: Some(dist_goal),
@@ -174,7 +174,7 @@ impl RRTWrapper {
 
             let mut num_points = 0;
             while num_points < self.hp.num_points {
-                let new_pnt = pnt.gen_rand_point(self.goal, self.hp.min_turn,dist_remain);
+                let new_pnt = pnt.gen_rand_point(self.goal, self.hp.min_turn, self.hp.max_curve, dist_remain);
 
                 let new_dist_remain = new_pnt.gas - new_pnt.dist_2_goal.unwrap_or(0);
                 if valid_point(new_pnt, self.goal) && new_dist_remain >= 0 {

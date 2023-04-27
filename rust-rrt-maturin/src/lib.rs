@@ -7,7 +7,7 @@ use rrt::{Point,HyperParams,RRTWrapper};
 
 #[pyclass]
 pub struct PyPoint {
-    inner: Point<isize>,
+     pub inner: Point<isize>,
 }
 
 #[pyclass]

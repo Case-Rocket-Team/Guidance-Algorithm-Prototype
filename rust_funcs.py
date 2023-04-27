@@ -4,12 +4,11 @@ def circle_from(p1,p2):
     return rrtM.circle_from(p1,p2)
 
 # Create points
-def rrt(startx,starty,tangx,tangy,goalx,goaly,gas):
+def rrt(startx,starty,tangx,tangy,goalx,goaly,gas, num_points = 4, min_turn =5, max_curve = 15, max_search = 5, margin = 10):
     start = rrtM.point_new(startx, starty, tangx, tangy,gas)
     goal = rrtM.point_new(goalx, goaly, 0, 0, 0)
-
     # Create HyperParams
-    hp = rrtM.hp_new(4,5,15,5,10)
+    hp = rrtM.hp_new(num_points, min_turn, max_curve, max_search, margin)
 
     # Create PyRRTWrapper
     algo = rrtM.rrt_new(start, goal, hp)

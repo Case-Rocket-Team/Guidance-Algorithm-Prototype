@@ -18,7 +18,7 @@ pub fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isize, isize))
         let sin_phi = pvec_normalized.0 * tang_norm.1 - pvec_normalized.1 * tang_norm.0;
         let radius = pnorm / (2.0 * sin_phi);
         //println!("{},{}", sin_phi.signum(),radius.signum());
-        let arclen = radius * sin_phi.abs().asin() * 2.0;
+        let arclen = radius.abs() * sin_phi.abs().asin() * 2.0;
         (arclen, radius)
     };
 

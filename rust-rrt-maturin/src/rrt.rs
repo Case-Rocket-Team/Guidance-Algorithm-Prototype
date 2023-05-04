@@ -56,17 +56,17 @@ impl Point<isize> {
             dist_2_goal: None,
         }
     }
-    fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, max_rad: isize, search_rad: isize) -> Point<isize> {
+    fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, max_curve: isize, search_rad: isize) -> Point<isize> {
         let mut rng = rand::thread_rng();
-        loop {
-            let (dx, dy)  = if search_rad <= 1 {
+        for _ in 0..1000 {
+            let (dx, dy)  = if search_rad <= min_rad {
                 (0,0)
             }else {
                 (rng.gen_range(-search_rad..search_rad),rng.gen_range(-search_rad..search_rad))
             };
 
             let (radius, arclen, head_new, _) = circle_from(self.coords, (goal.coords.0 + dx, goal.coords.1 + dy), self.tang);
-            if radius >= min_rad && radius <= max_rad {
+            if radius.abs() >= min_rad && arclen <= max_curve {
                 let (_, dist_goal, _, _) = circle_from((goal.coords.0 + dx, goal.coords.1 + dy), goal.coords, head_new);
                 return Point {
                     coords: (goal.coords.0 + dx, goal.coords.1 + dy),
@@ -76,6 +76,7 @@ impl Point<isize> {
                 };
             }
         }
+        panic!("Failed to generate a random point with min radius {}, search radius {} and max curve {}", min_rad, search_rad, max_curve);
     }
 }
 
@@ -183,6 +184,8 @@ impl RRTWrapper {
                         parent_index: Some(idx),
                     });
                     num_points += 1;
+                } else {
+                    println!("Invalid point");
                 }
             }
         } else {

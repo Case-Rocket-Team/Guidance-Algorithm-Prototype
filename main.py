@@ -6,7 +6,7 @@ import rust_funcs
 DRAW_STUFF = True
 PRINT = False
 
-start_x, start_y = 10, 40
+start_x, start_y = 10, 30
 goal_x, goal_y = 450, 450
 tang_x, tang_y = 1, 3
 gas = 1500
@@ -25,7 +25,7 @@ if DRAW_STUFF:
 printMe = False
 
 ##----##
-reet = rust_funcs.rrt(start_x, start_y, tang_x, tang_y, goal_x, goal_y, gas, min_turn=13,max_curve=100)
+reet = rust_funcs.rrt(start_x, start_y, tang_x, tang_y, goal_x, goal_y, gas, min_turn=13,max_curve=500)
 for x in reet:
     points.append(x)
 ##----##
@@ -48,7 +48,7 @@ for i in range(len(points)-1, 0, -1):
     rel_p1 = np.array([parentX, parentY]) - np.array(center)
     angle_ben = np.arctan2(np.linalg.det([rel_p1, rel_p2]), np.dot(rel_p1, rel_p2))
     angle_will = np.arcsin(np.linalg.det([rel_p1, rel_p2]) / np.linalg.norm(rel_p1) / np.linalg.norm(rel_p2))
-    angle = angle_ben
+    angle = angle_will
     x = []
     y = []
     
@@ -67,7 +67,7 @@ for i in range(len(points)-1, 0, -1):
         y.append(y_p)
         
     plt.plot((parentX,currentX),(parentY,currentY),color='green',linewidth=1)
-    plt.plot(x, y, color='orange', linewidth=2)
+    #plt.plot(x, y, color='orange', linewidth=2)
     plt.plot(currentX, currentY, 'ro', markersize=3)
     #unit_head = np.array(newhead) / np.linalg.norm(np.array(newhead))
     #newHead_end = np.array([currentX, currentY]) + unit_head *3

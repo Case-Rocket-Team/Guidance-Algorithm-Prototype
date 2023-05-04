@@ -12,7 +12,7 @@ fn main() {
     // create the GPSRef object
     //let refer = transform::GPSRef()
 
-    println!("{:?}", gpsref.convert(ref_lat,ref_lon,ref_alt+20.0));
+    println!("{:?}", gpsref.convert(40.673247418108275,-73.95520343242187,30.0));
 }
 /*
     let goal = rrt::Point {

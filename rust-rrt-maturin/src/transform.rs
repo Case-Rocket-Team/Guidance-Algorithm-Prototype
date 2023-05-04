@@ -8,7 +8,9 @@ pub struct GPSRef {
 }
 
 impl GPSRef {
-    pub fn new(ref_lat: f64, ref_lon: f64, ref_alt: f64) -> Self {
+    pub fn new(lat: f64, lon: f64, ref_alt: f64) -> Self {
+        let ref_lat = lat.to_radians();
+        let ref_lon = lon.to_radians();
         let (r_matrix, ecef_ref, jacobian_matrix) = Self::gps_to_enu_matrix_approx(ref_lat, ref_lon, ref_alt);
         GPSRef {
             ref_lat,
@@ -22,6 +24,8 @@ impl GPSRef {
     
     
     pub fn convert(&self, lat: f64, lon: f64, alt: f64) -> (f64, f64, f64) {
+        let lat = lat.to_radians();
+        let lon = lon.to_radians();
         // difference between current point and reference 
         let diff = [lat - self.ref_lat, lon - self.ref_lon, alt - self.ref_alt];
         println!("{:?}", diff);
@@ -32,15 +36,13 @@ impl GPSRef {
     }
 
     
-    fn gps_to_enu_matrix_approx(ref_lat: f64, ref_lon: f64, ref_alt: f64) -> ([[f64; 3]; 3], [f64; 3], [[f64; 3]; 3]) {
+    fn gps_to_enu_matrix_approx(ref_lat_rad: f64, ref_lon_rad: f64, ref_alt: f64) -> ([[f64; 3]; 3], [f64; 3], [[f64; 3]; 3]) {
         // Constants for WGS84 ellipsoid
         let a = 6_378_137.0; // semi-major axis
         let f = 1.0 / 298.257223563; // flattening
         let e_sq = 2.0 * f - f * f; // square of eccentricity
 
         // Convert reference latitude and longitude to radians
-        let ref_lat_rad = ref_lat.to_radians();
-        let ref_lon_rad = ref_lon.to_radians();
 
         // Calculate prime vertical radius of curvature
         let n = a / (1.0 - e_sq * ref_lat_rad.sin().powi(2)).sqrt();

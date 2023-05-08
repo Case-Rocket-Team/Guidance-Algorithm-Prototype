@@ -1,15 +1,19 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-import rust_funcs
 
-DRAW_STUFF = True
+
+import rust_funcs
+from parafoil_sim import State
+
+DRAW_STUFF = False
 PRINT = False
 
 start_x, start_y = 10, 30
 goal_x, goal_y = 450, 450
 tang_x, tang_y = 1, 3
-gas = 1500
+gas = 2000
+glide_ratio = 6.5
 points = []
 
 start_coords = start_x, start_y
@@ -25,11 +29,67 @@ if DRAW_STUFF:
 printMe = False
 
 ##----##
-reet = rust_funcs.rrt(start_x, start_y, tang_x, tang_y, goal_x, goal_y, gas, min_turn=13,max_curve=500)
-for x in reet:
-    points.append(x)
+while True:
+    try:
+        reet = rust_funcs.rrt(start_x, start_y, tang_x, tang_y, goal_x, goal_y, gas, min_turn=13,max_curve=1000)
+        for x in reet:
+            points.append(x)
+    except:
+        print("RRT failed, running again")
+    else:
+        break
 ##----##
 
+# separate waypoints by height
+waypoints = []
+for point in points:
+    waypoints.append((point,point.to_dict()["gas"]/glide_ratio))
+
+
+payload = State(max_wind=0.01)
+payload.pos = np.array((start_x,start_y,gas/glide_ratio),dtype='float64')
+payload.vel = np.array((0,0,0),dtype='float64')
+
+x = []
+y = []
+z = []
+
+payload.turningRadius = 0
+w_idx = 0 #index of the current waypoint
+pos = plt.figure().add_subplot(projection='3d')
+plt.plot(goal_x, goal_y,0, 'y*',markersize=10)
+
+while payload.pos[2] > 0:
+    #create a new PyPoint out of the current position
+    current_pos = rust_funcs.new_point(payload.pos[0], payload.pos[1],
+                         np.real(payload.heading),np.imag(payload.heading),
+                         payload.pos[2])
+    
+    if payload.pos[2] < waypoints[w_idx][1]:
+        current_waypoint = waypoints[w_idx][0].to_dict()
+        plt.plot(current_waypoint["coords"][0], current_waypoint["coords"][1],current_waypoint["gas"]/glide_ratio, 'ro',markersize=10)
+        
+        print("current y diff:",waypoints[w_idx][1],payload.pos[2])
+        
+        
+        w_idx += 1
+        
+    # use circle_from to find new turning radius:
+    radius, arclen, newhead, center = rust_funcs.circle_from(current_pos, waypoints[w_idx][0])
+    payload.turningRadius = radius
+    
+    x.append(payload.pos[0])
+    y.append(payload.pos[1])
+    z.append(payload.pos[2])
+    
+    payload.update()
+    
+pos.plot(x, y, z, label='parametric curve')
+plt.show()
+
+
+
+"""
 plt.ion()
 for i in range(len(points)-1, 0, -1):
     print(i)
@@ -67,7 +127,7 @@ for i in range(len(points)-1, 0, -1):
         y.append(y_p)
         
     plt.plot((parentX,currentX),(parentY,currentY),color='green',linewidth=1)
-    #plt.plot(x, y, color='orange', linewidth=2)
+    plt.plot(x, y, color='orange', linewidth=2)
     plt.plot(currentX, currentY, 'ro', markersize=3)
     #unit_head = np.array(newhead) / np.linalg.norm(np.array(newhead))
     #newHead_end = np.array([currentX, currentY]) + unit_head *3
@@ -82,5 +142,6 @@ for i in range(len(points)-1, 0, -1):
 
     plt.draw()
     plt.pause(0.0001)
-
-plt.pause(100)
+plt.pause(1000)
+plt.ioff()
+"""

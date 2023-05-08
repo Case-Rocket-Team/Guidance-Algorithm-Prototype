@@ -35,8 +35,6 @@ pub fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isize, isize))
     )
 }
 
-
-
 fn norm(vector: (f64, f64)) -> f64 {
     (vector.0.powi(2) + vector.1.powi(2)).sqrt()
 }

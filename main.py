@@ -16,6 +16,8 @@ gas = 2000
 glide_ratio = 6.5
 points = []
 
+threshold = 10
+
 start_coords = start_x, start_y
 
 goal_coords = goal_x, goal_y
@@ -49,6 +51,7 @@ for point in points:
 payload = State(max_wind=0.01)
 payload.pos = np.array((start_x,start_y,gas/glide_ratio),dtype='float64')
 payload.vel = np.array((0,0,0),dtype='float64')
+payload.setHeadingRad(-np.arctan2(tang_y,tang_x))
 
 x = []
 y = []
@@ -58,6 +61,9 @@ payload.turningRadius = 0
 w_idx = 0 #index of the current waypoint
 pos = plt.figure().add_subplot(projection='3d')
 plt.plot(goal_x, goal_y,0, 'y*',markersize=10)
+current_waypoint = waypoints[w_idx][0].to_dict()
+
+
 
 while payload.pos[2] > 0:
     #create a new PyPoint out of the current position
@@ -65,14 +71,24 @@ while payload.pos[2] > 0:
                          np.real(payload.heading),np.imag(payload.heading),
                          payload.pos[2])
     
+    
+    close_enough = abs(payload.pos[0] - current_waypoint["coords"][0]) < threshold and...
+    abs(payload.pos[1] - current_waypoint["coords"][1]) < threshold and ...
+    payload.pos[2] - waypoints[w_idx][1] < threshold
+    
+    
     if payload.pos[2] < waypoints[w_idx][1]:
-        current_waypoint = waypoints[w_idx][0].to_dict()
         plt.plot(current_waypoint["coords"][0], current_waypoint["coords"][1],current_waypoint["gas"]/glide_ratio, 'ro',markersize=10)
-        
+        #plot tangent vector
+        plt.plot([current_waypoint["coords"][0],current_waypoint["coords"][0]+current_waypoint["tang"][0] *50],
+                 [current_waypoint["coords"][1],current_waypoint["coords"][1]+current_waypoint["tang"][1]*50],
+                 [current_waypoint["gas"]/glide_ratio,current_waypoint["gas"]/glide_ratio], color='orange',markersize=10)
         print("current y diff:",waypoints[w_idx][1],payload.pos[2])
         
         
         w_idx += 1
+        current_waypoint = waypoints[w_idx][0].to_dict()
+
         
     # use circle_from to find new turning radius:
     radius, arclen, newhead, center = rust_funcs.circle_from(current_pos, waypoints[w_idx][0])

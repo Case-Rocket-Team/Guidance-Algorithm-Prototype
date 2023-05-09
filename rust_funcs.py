@@ -8,8 +8,8 @@ def new_point(x,y,tx,ty,gas):
 
 # Create points
 def rrt(startx,starty,tangx,tangy,goalx,goaly,gas, num_points = 4, min_turn =5, max_curve = 15, max_search = 5, margin = 10):
-    start = rrtM.point_new(startx, starty, tangx, tangy,gas)
-    goal = rrtM.point_new(goalx, goaly, 0, 0, 0)
+    start = rrtM.point_new(int(startx), int(starty), int(tangx), int(tangy), int(gas))
+    goal = rrtM.point_new(int(goalx), int(goaly), 0, 0, 0)
     # Create HyperParams
     hp = rrtM.hp_new(num_points, min_turn, max_curve, max_search, margin)
 

@@ -187,7 +187,7 @@ impl RRTWrapper {
                     num_points += 1;
                     num_tries = 0;
                 } else {
-                    println!("Invalid point");
+                    //println!("Invalid point");
                     num_tries += 1;
                 }
                 if num_tries > 1000 {

@@ -13,7 +13,7 @@ class State:
         self.turningRadius = 0
         
         self.dt = 0.5
-        self.glideRatio = 6.5 * 4
+        self.glideRatio = 6.5 * 2.4
         self._zVelLast = 0
         self.max_wind = max_wind
 
@@ -33,8 +33,10 @@ class State:
         #speed = math.sqrt(self.getGroundVel()[0] ** 2 + self.getGroundVel()[1] ** 2)
 
         # Apply rotations
-        if abs(self.turningRadius) == 0:
+        if self.turningRadius == 0:
             self._setDThetaDtRad(0)
+        elif abs(self.turningRadius) < 0:
+            self._setDThetaDtRad(speed / (MIN_TURN * np.sign(self.turningRadius)))
         else:
             self._setDThetaDtRad(speed / self.turningRadius)
         self.heading = self.heading * self._dThetaDs
@@ -44,7 +46,7 @@ class State:
         
     
     def setHeadingRad(self, heading):
-        self.heading = np.exp(1j * heading)
+        self.heading = -np.exp(1j * heading)
 
     def getHeadingRad(self):
         return np.angle(self.heading)

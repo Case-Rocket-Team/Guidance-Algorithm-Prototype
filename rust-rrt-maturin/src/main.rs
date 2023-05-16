@@ -2,7 +2,7 @@ mod rrt;
 mod transform;
 
 fn main() {
-    // Test the function with a reference GPS coordinate (latitude, longitude, altitude)
+/*     // Test the function with a reference GPS coordinate (latitude, longitude, altitude)
     let ref_lat = 40.7128;
     let ref_lon = -74.0060;
     let ref_alt = 30.0;
@@ -14,7 +14,7 @@ fn main() {
 
     println!("{:?}", gpsref.convert(40.673247418108275,-73.95520343242187,30.0));
 }
-/*
+*/
     let goal = rrt::Point {
         coords: (10, 40),
         tang: (0, 0),
@@ -46,4 +46,3 @@ fn main() {
         }
     }
 }
-*/

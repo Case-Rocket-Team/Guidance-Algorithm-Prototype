@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-const MAX_ARR_SIZE: usize = 127;
+const MAX_ARR_SIZE: usize = 511;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub struct Node<T> {

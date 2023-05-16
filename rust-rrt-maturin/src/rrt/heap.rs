@@ -1,4 +1,4 @@
-const MAX_HEAP_SIZE: usize = 127;
+const MAX_HEAP_SIZE: usize = 511;
 
 pub struct BinaryHeap<T: Ord + Copy> {
     heap: [Option<T>; MAX_HEAP_SIZE],

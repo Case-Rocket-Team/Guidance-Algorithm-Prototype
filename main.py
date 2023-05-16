@@ -13,11 +13,9 @@ PRINT = False
 start_x, start_y = 10, 30
 goal_x, goal_y = 450, 450
 tang_x, tang_y = 1, 3
-gas = 300*6.5
+gas = 600*6.5
 glide_ratio = 6.5
 points = []
-
-threshold = 10
 
 start_coords = start_x, start_y
 
@@ -28,7 +26,7 @@ printMe = False
 ##----##
 while True:
     try:
-        reet = rust_funcs.rrt(start_x, start_y, tang_x, tang_y, goal_x, goal_y, gas, min_turn=13,max_curve=500)
+        reet = rust_funcs.rrt(start_x, start_y, tang_x, tang_y, goal_x, goal_y, gas, min_turn=13,max_curve=1000)
         for x in reet:
             points.append(x)
     except:
@@ -41,9 +39,9 @@ while True:
 waypoints = []
 for point in points:
     waypoints.append((point,point.to_dict()["gas"]/glide_ratio))
+ax = plt.figure()
 
-
-payload = State(max_wind=0.1)
+payload = State(max_wind=0.2)
 payload.pos = np.array((start_x,start_y,gas/glide_ratio),dtype='float64')
 payload.vel = np.array((0,0,0),dtype='float64')
 payload.setHeadingRad(np.arctan2(tang_y,tang_x))
@@ -54,7 +52,7 @@ z = []
 
 payload.turningRadius = 0
 w_idx = 0 #index of the current waypoint
-ax = plt.figure()
+
 pos = ax.add_subplot(211, projection='3d')
 plt.plot(goal_x, goal_y,0, 'y*',markersize=10)
 
@@ -71,7 +69,6 @@ plt.plot([current_waypoint["coords"][0],current_waypoint["coords"][0]+np.real(pa
          [current_waypoint["coords"][1],current_waypoint["coords"][1]+np.imag(payload.heading)*5],
          [current_waypoint["gas"]/glide_ratio,current_waypoint["gas"]/glide_ratio], color='orange',markersize=10)
         
-w_idx += 1
 desired_radius, desired_arclen, _, center = rust_funcs.circle_from(start, waypoints[w_idx][0])
 
 
@@ -81,32 +78,38 @@ while payload.pos[2] > 0:
                          np.real(payload.heading),np.imag(payload.heading),
                          payload.pos[2])
     
-    
+    threshold = 0.5
     close_enough = abs(payload.pos[0] - current_waypoint["coords"][0]) < threshold and...
-    abs(payload.pos[1] - current_waypoint["coords"][1]) < threshold and ...
-    payload.pos[2] - (waypoints[w_idx][1]/glide_ratio) < threshold
+    abs(payload.pos[1] - current_waypoint["coords"][1]) < threshold
     
     
-    if payload.pos[2] < waypoints[w_idx][1] or close_enough:
+    if (payload.pos[2] < waypoints[w_idx][1]) and w_idx < len(waypoints)-1:
         plt.plot(current_waypoint["coords"][0], current_waypoint["coords"][1],current_waypoint["gas"]/glide_ratio, 'ro',markersize=10)
+        tang_norm = np.array(current_waypoint["tang"])/np.linalg.norm(current_waypoint["tang"])
         #plot tangent vector
-        plt.plot([current_waypoint["coords"][0],current_waypoint["coords"][0]+current_waypoint["tang"][0] *5],
-                 [current_waypoint["coords"][1],current_waypoint["coords"][1]+current_waypoint["tang"][1]*5],
+        plt.plot([current_waypoint["coords"][0],current_waypoint["coords"][0]+tang_norm[0]],
+                 [current_waypoint["coords"][1],current_waypoint["coords"][1]+tang_norm[1]],
                  [current_waypoint["gas"]/glide_ratio,current_waypoint["gas"]/glide_ratio], color='orange',markersize=10)
         #print("current y diff:",waypoints[w_idx][1],payload.pos[2])
+        #plot current location
+        plt.plot(payload.pos[0], payload.pos[1],payload.pos[2], 'k*',markersize=10)
         
+        w_idx += 1
         prev_waypoint = current_waypoint
-        if w_idx < len(waypoints)-1:
-            w_idx += 1
+
         current_waypoint = waypoints[w_idx][0].to_dict()
         
         desired_radius, desired_arclen, _, center = rust_funcs.circle_from(waypoints[w_idx-1][0], waypoints[w_idx][0])
         # Generate the points along the arc
         num_points = 100  # Number of points to generate along the arc
-        
         p1 = np.array(prev_waypoint["coords"])-np.array(center)
         p2 = np.array(current_waypoint["coords"])-np.array(center)
-        ang = -(desired_arclen)/desired_radius
+        ang = 0
+        try:
+            ang = (desired_arclen)/desired_radius
+        except:
+            raise Exception(w_idx,len(waypoints))
+            
         t = np.linspace(0, ang, num_points)
         #print("arclen",desired_arclen)
         #rotation matrix for the arc
@@ -121,22 +124,43 @@ while payload.pos[2] > 0:
         des_z = np.linspace(prev_waypoint["gas"]/glide_ratio, current_waypoint["gas"]/glide_ratio, num_points)  # z-coordinates of the arc points
 
         # Plot the desired path in green
-        pos.plot(des_x,des_y,des_z, color='green')
-        
-        
+        pos.plot(des_x,des_y,des_z, color='orange')
+               
+        desired_radius, desired_arclen, _, center = rust_funcs.circle_from(waypoints[w_idx-1][0], waypoints[w_idx][0])
 
-        start = rust_funcs.new_point(payload.pos[0], payload.pos[1],
-                         np.real(payload.heading),np.imag(payload.heading),
-                         payload.pos[2])
-
-        desired_radius, desired_arclen, _, center = rust_funcs.circle_from(start, waypoints[w_idx][0])
-
-        
+    #plt.show()
     # use circle_from to find new turning radius:
     radius, arclen, newhead, center = rust_funcs.circle_from(current_pos, waypoints[w_idx][0])
-    turn_radius = radius #+ (radius - desired_radius) * (1 - np.exp(-arclen / (desired_arclen+0.0001)))
+    Kp = 0.2
+    radius_ratio = 1 if desired_radius == 0 else radius / desired_radius #positive if too large, negative if too small
+    arc_ratio = 1 if arclen == 0 else np.exp(-desired_arclen/arclen)
+    """"""
+    #arclen_ratio = 1 if desired_arclen == 0 else arclen / desired_arclen #positive if too large, negative if too small
+    assigned_r = 0
+    gas_left = payload.pos[2] - waypoints[w_idx][1]
+    if gas_left > arclen: # too much gas, turn tighter
+        assigned_r = radius * (1 - Kp) 
+    elif gas_left < arclen:
+        assigned_r = radius * (1 + Kp)
+    else:
+        assigned_r = radius
+    payload.turningRadius = assigned_r * radius_ratio * arc_ratio + desired_radius * (1 - arc_ratio)
     
-    payload.turningRadius = turn_radius
+    """
+    
+    MAX_TURN = 1e5
+    arc_ratio = 1 if arclen == 0 else np.exp(-desired_arclen/arclen)
+    dist_left = abs(payload.pos[2] - waypoints[w_idx][1])*glide_ratio - arclen
+    turn = 0 if desired_radius == 0 else radius/desired_radius
+    if abs(radius) >= MAX_TURN:
+        print(f"radius {radius} too large, intended radius {desired_radius}")
+    if np.sign(desired_radius) != np.sign(radius):
+        print("signs don't match")
+        #payload.turningRadius = -payload.turningRadius
+    turn = 0 if desired_arclen == 0 else dist_left/desired_arclen
+    payload.turningRadius = radius * (1 + turn) * (arc_ratio) #+ desired_radius * (1 - arc_ratio)
+    """
+    
     
     x.append(payload.pos[0])
     y.append(payload.pos[1])
@@ -144,12 +168,18 @@ while payload.pos[2] > 0:
     
     payload.update()
     
+plt.plot(goal_x, goal_y,0, 'y*',markersize=10)
 pos.plot(x, y, z, label='parametric curve')
 
 flat = ax.add_subplot(212)
 flat.plot(start_x, start_y, 'ko',markersize=10)
+flat.plot([start_x,start_x+tang_x*5], [start_y,start_y+tang_y*5], color='blue',linewidth=2)
 flat.plot(goal_x, goal_y, 'ys',markersize=10)
-for i in range(0,len(points)-1):
+flat.plot(x,y,color='blue',linewidth=1)
+#points.append(rust_funcs.new_point(goal_x, goal_y, 0, 0, 0))
+print("num points:", len(points))
+
+for i in range(len(points)-1):
     radius, arclen, newhead, center = rust_funcs.circle_from(points[i], points[i+1])
     current = points[i].to_dict()
     currentX = current["coords"][0]
@@ -167,7 +197,7 @@ for i in range(0,len(points)-1):
     num_points = 100  # Number of points to generate along the arc
     p1 = np.array([currentX, currentY])-np.array(center)
     p2 = np.array([nextX, nextY])-np.array(center)
-    ang = -float(arclen)/float(radius)
+    ang = float(arclen)/float(radius)
     t = np.linspace(0, ang, num_points)
     rot = np.array([[np.cos(t), -np.sin(t)],[np.sin(t), np.cos(t)]])
     rots = np.array([rot[:,:,i].dot(p1) for i in range(num_points)])
@@ -185,5 +215,5 @@ for i in range(0,len(points)-1):
         print('Length of final path: ', len(points))
         print('X and Y of closest node: ', current["coords"], current["coords"])
         printMe = False
-    #plt.show()
+
 plt.show()

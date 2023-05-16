@@ -9,7 +9,7 @@ def airDensityFromAltitude(z):  #https://en.wikipedia.org/wiki/Density_of_air RE
         tempLapseRate = 0.0065 #[K/m]
         gasConstant =  8.31432 #[N*m / mol*k]
         molarMass = 0.0289644 #molar mass of dry air [kg/mol]
-        intermediate = (StandAtmPres*molarMass)/(gasConstant*StandTemp)
+        intermediate = StandAtmPres
         intermediate2 = (1-tempLapseRate*z/StandTemp)**(((gravity*molarMass)/(gasConstant*tempLapseRate))-1)
         return (intermediate *intermediate2)
         
@@ -44,18 +44,25 @@ def perlin_noise(seed: int, x: float, y: float, z: float) -> float:
         return noise.pnoise3(x, y, z, octaves=5, persistence=0.5, lacunarity=2.0, repeatx=1, repeaty=1, repeatz=1, base=seed)
 
 def wind(coordinate, max_velocity,seed=1):
-    
-    x, y, z = coordinate
-    noise_scale = 0.001
+        np.random.seed(seed)
+        wind = np.random.rand(3)
+        wind[2] = 0.0
+        return wind * max_velocity
+        
+        
+        """
+        x, y, z = coordinate
+        noise_scale = 0.001
 
-    # Generate Perlin noise for each direction
-    x_noise = perlin_noise(seed, x * noise_scale, y * noise_scale, z * noise_scale)
-    y_noise = perlin_noise(seed + 1, x * noise_scale, y * noise_scale, z * noise_scale)
-    z_noise = perlin_noise(seed + 2, x * noise_scale, y * noise_scale, z * noise_scale)
+        # Generate Perlin noise for each direction
+        x_noise = perlin_noise(seed, x * noise_scale, y * noise_scale, z * noise_scale)
+        y_noise = perlin_noise(seed + 1, x * noise_scale, y * noise_scale, z * noise_scale)
+        z_noise = perlin_noise(seed + 2, x * noise_scale, y * noise_scale, z * noise_scale)
 
-    # Convert noise values to velocities
-    velocity_x = 2 * x_noise - 1
-    velocity_y = 2 * y_noise - 1
-    velocity_z = 2 * z_noise - 1
+        # Convert noise values to velocities
+        velocity_x = 2 * x_noise - 1
+        velocity_y = 2 * y_noise - 1
+        velocity_z = 2 * z_noise - 1
 
-    return np.array([velocity_x, velocity_y, velocity_z]) * max_velocity
+        return np.array([velocity_x, velocity_y, velocity_z]) * max_velocity
+        """

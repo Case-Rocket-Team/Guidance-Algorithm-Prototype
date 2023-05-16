@@ -58,7 +58,7 @@ impl Point<isize> {
     }
     fn gen_rand_point(&self, goal: Point<isize>, min_rad: isize, max_curve: isize, search_rad: isize) -> Point<isize> {
         let mut rng = rand::thread_rng();
-        for _ in 1..1000 {
+        for _ in 1..10000 {
             let (dx, dy) = if search_rad <= min_rad {
                 (0,0)
             }else {

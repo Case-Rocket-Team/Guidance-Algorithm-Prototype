@@ -2,8 +2,6 @@ import numpy as np
 import math
 import parafoil_utils as utils
 
-MIN_TURN = 13
-
 class State:
     def __init__(self,max_wind=0):
         self.pos = np.array((0,0,0),dtype='float64')
@@ -13,7 +11,7 @@ class State:
         self.turningRadius = 0
         
         self.dt = 0.5
-        self.glideRatio = 6.5 * 2.4
+        self.glideRatio = 6.5 * 2
         self._zVelLast = 0
         self.max_wind = max_wind
 
@@ -35,8 +33,6 @@ class State:
         # Apply rotations
         if self.turningRadius == 0:
             self._setDThetaDtRad(0)
-        elif abs(self.turningRadius) < 0:
-            self._setDThetaDtRad(speed / (MIN_TURN * np.sign(self.turningRadius)))
         else:
             self._setDThetaDtRad(speed / self.turningRadius)
         self.heading = self.heading * self._dThetaDs

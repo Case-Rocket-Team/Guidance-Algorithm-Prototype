@@ -18,10 +18,10 @@ pub fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isize, isize))
         let center = (p1_f64.0 - (-tang_norm.1) * f64::INFINITY, p1_f64.1 - (tang_norm.0) * f64::INFINITY);
         (pnorm, f64::INFINITY, center, tang_f64)
     } else {
-        let sin_phi = pvec_normalized.0 * tang_norm.1 - pvec_normalized.1 * tang_norm.0;
-        let radius = pnorm / (2.0 * sin_phi * cos_phi);
-        let center = (p1_f64.0 - (-tang_norm.1) * radius, p1_f64.1 - (tang_norm.0) * radius);
-        
+        let sin_phi = pvec_normalized.1 * tang_norm.0 - pvec_normalized.0 * tang_norm.1;
+        let radius = pnorm / (2.0 * sin_phi);
+        let center = (p1_f64.0 - (tang_norm.1) * radius, p1_f64.1 + (tang_norm.0) * radius);
+
         //println!("{},{}", sin_phi.signum(),radius.signum());
 
         let rel_p2 = (p2_f64.0 - center.0, p2_f64.1 - center.1);
@@ -31,10 +31,10 @@ pub fn circle_from(p1: (isize, isize), p2: (isize, isize), tang: (isize, isize))
         let dot = tang_f64.0 * rel_p2.0 + tang_f64.1 * rel_p2.1;
 
         let direct = if signum(dot) > 0.0 { 0.0 } else { -2.0 * PI };
-        let arclen = radius.abs() * (sin_phi.abs()*2.0).asin();
+        let arclen = (radius * ((sin_phi.abs()).asin()*2.0 + direct)).abs();
         let pc = (center.0 - p2_f64.0, center.1 - p2_f64.1);
         let pc_sign = radius.signum();
-        let head_new = (-pc.1 * pc_sign, pc.0 * pc_sign);
+        let head_new = (pc.1 * pc_sign, -pc.0 * pc_sign);
         (arclen, radius,center,head_new)
     };
 

@@ -66,6 +66,7 @@ while payload.pos[2] > 0:
 
         current_waypoint = waypoints[w_idx][0].to_dict()
         integral = 0
+        cheat_in_error_previous = 0
         
         desired_radius, desired_arclen, _, center = rust_funcs.circle_from(waypoints[w_idx-1][0], waypoints[w_idx][0])
 
@@ -78,9 +79,9 @@ while payload.pos[2] > 0:
     """"""
     K1 = 1
     
-    Kp = 20
-    Ki = 0.00
-    Kd = 0.00
+    Kp = 1e-5
+    Ki = 0
+    Kd = 0
     error_limit = 100
     integral_limit = 10 * Ki
 
@@ -97,17 +98,24 @@ while payload.pos[2] > 0:
     
     payload.turningRadius = 
     """
-    center_dist = np.linalg.norm(np.array(center) - np.array(payload.pos[0],payload.pos[1]))
-    d_error = (abs(desired_radius) - center_dist)
-    error_gas = (payload.pos[2] - waypoints[w_idx][1]) - arclen
-    desired_cheat_in = -K1 * error_gas
+    center_dist = np.linalg.norm(np.array(desired_center) - np.array(payload.pos[0],payload.pos[1])) # absolute distance from the center of the desired
+    d_error = (abs(desired_radius) - center_dist) # difference in distance from the desired radius
+    error_gas = (payload.pos[2] - waypoints[w_idx][1])*glide_ratio - arclen # Whether too much (if positive) or too little (if negative) gas will be left at the end of the turn
+    desired_cheat_in = -K1 * error_gas #scaling error gas
     cheat_in_error = (desired_cheat_in - d_error)
     
     proportional = Kp * cheat_in_error
     derivative = Kd * (cheat_in_error - cheat_in_error_previous)
     integral = np.clip(integral + Ki * (cheat_in_error) * payload.dt, -integral_limit, integral_limit)
-    payload.turningRadius = np.sign(payload.turningRadius) * abs(desired_radius) - proportional - derivative - integral
-
+    correction = proportional + derivative + integral
+    
+    desired_curvature = correction if desired_radius == 0 else correction + abs(1 / desired_radius)
+    desired_curvature = desired_curvature.clip(-1/MIN_TURN,1/MIN_TURN)
+    if desired_curvature == 0:
+        payload.turningRadius = 0
+    else:
+        payload.turningRadius = 1 / desired_curvature * np.sign(desired_radius)
+    cheat_in_error_previous = cheat_in_error
 
 
 

@@ -1,4 +1,4 @@
-use std::cmp::Ord;
+use std::{cmp::Ord, num};
 use std::ops::Sub;
 
 use rand::Rng;
@@ -10,7 +10,7 @@ mod heap;
 mod path_array;
 
 pub const MAX_PATH_LENGTH: usize = 127;
-const DO_DEBUG: bool = true;
+const DO_DEBUG: bool = false;
 
 #[derive(Eq, PartialEq, PartialOrd, Copy, Clone)]
 pub struct Point<T>
@@ -66,7 +66,7 @@ impl Point<isize> {
             };
 
             let (radius, arclen, head_new, _) = circle_from(self.coords, (goal.coords.0 + dx, goal.coords.1 + dy), self.tang);
-            if radius.abs() >= min_rad && arclen <= max_curve {
+            if radius.abs() >= min_rad { //&& (arclen < self.dist_2_goal.unwrap_or(0) ||   arclen <= max_curve) 
                 let (_, dist_goal, _, _) = circle_from((goal.coords.0 + dx, goal.coords.1 + dy), goal.coords, head_new);
                 return Point {
                     coords: (goal.coords.0 + dx, goal.coords.1 + dy),
@@ -175,7 +175,7 @@ impl RRTWrapper {
 
             let mut num_points = 0;
             let mut num_tries = 0;
-            while num_points < self.hp.num_points {
+            'search: while num_points < self.hp.num_points {
                 let new_pnt = pnt.gen_rand_point(self.goal, self.hp.min_turn, self.hp.max_curve, dist_remain);
 
                 let new_dist_remain = new_pnt.gas - new_pnt.dist_2_goal.unwrap_or(0);
@@ -191,7 +191,11 @@ impl RRTWrapper {
                     num_tries += 1;
                 }
                 if num_tries > 1000 {
-                    panic!("Failed to generate a valid point");
+                    if num_points > 1 {
+                        break 'search;
+                    } else {
+                        panic!("Failed to generate a valid point");
+                    }
                 }
             }
         } else {

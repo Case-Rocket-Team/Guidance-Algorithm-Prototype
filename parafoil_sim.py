@@ -12,11 +12,11 @@ class State:
         
         self.dt = 0.5
         self.glideRatio = 6.5 * 2
-        self._zVelLast = 0
+        self._zVelLast = -utils.rateOfDescent(self.pos[2])[0]
         self.max_wind = max_wind
 
     def update(self):
-        dz = self._zVelLast * self.dt
+        dz = abs(self._zVelLast * self.dt)
         dx = dz * self.glideRatio
 
         # Update velocity and position, apply wind
@@ -42,7 +42,7 @@ class State:
         
     
     def setHeadingRad(self, heading):
-        self.heading = -np.exp(1j * heading)
+        self.heading = np.exp(1j * heading)
 
     def getHeadingRad(self):
         return np.angle(self.heading)

@@ -308,4 +308,4 @@ def Main(plot=False, start = [10,30],goal=[450,450],tang=[1,3],gas=600, max_wind
     return des_xs,des_ys,x,y 
         
 if __name__ == "__main__":
-    Main(plot=True)
+    Main(plot=True,max_wind=0.0)

@@ -45,7 +45,7 @@ def evaluate(individual):
         tang = ( random.randint(-5,5), random.randint(-5,5))
    
     gas = random.randint(600,1000)
-    des_xs, des_ys, x, y = Main(plot=False, start=start, goal=goal, tang=tang, gas=gas, max_wind=0, input_params=params)
+    des_xs, des_ys, x, y = Main(plot=False, start=start, goal=goal, tang=tang, gas=gas, max_wind=0.5, input_params=params)
 
     des = np.array([des_xs, des_ys]).T
     path = np.array([x, y]).T
